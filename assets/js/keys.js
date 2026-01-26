@@ -36,12 +36,12 @@ window.OIKOS_KEYS = {
 
   // ✅ CANAL NÃO AUTORIZADO (c04)
   CODE_04: [
-    "canal",
+    "aviso",
     "canal-nao-autorizado",
     "transmissao",
     "transmissão",
     "anonima",
-    "anónima",
+    "duda",
     "oikos-pt"
   ],
 
