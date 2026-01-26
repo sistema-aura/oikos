@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OIKOS — Canal não autorizado</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    /* Esta página precisa scroll */
+    html, body { height:auto !important; overflow-y:auto !important; }
+    body.net { min-height:100vh; overflow-y:auto !important; }
+
+    .pageWrap{
+      position: relative; z-index: 2;
+      padding: 22px;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .topBar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .badge{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(255,120,120,.28);
+      background: rgba(0,0,0,.35);
+      font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+      color: rgba(255,190,190,.95);
+    }
+
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(255,120,120,.95);
+      box-shadow: 0 0 18px rgba(255,120,120,.55);
+    }
+
+    .card{
+      border:1px solid rgba(120,255,214,.14);
+      background: rgba(0,0,0,.22);
+      border-radius:16px;
+      padding: 18px 16px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+
+    .title{
+      margin:0 0 10px;
+      font-size: 14px;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+      color: rgba(255,160,160,.95);
+      font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    }
+
+    .msg{
+      margin:0;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-size: 13px;
+      color: rgba(232,237,246,.86);
+      font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    }
+
+    /* Gate */
+    #lockCanal { width:100%; display:none; }
+    #contentCanal { display:none; }
+
+    /* Garante que o modal fica por cima de tudo */
+    #codeModal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+    }
+  </style>
+</head>
+
+<body class="net">
+  <canvas id="netCanvas"></canvas>
+
+  <div class="pageWrap" id="canalRoot">
+    <div class="topBar">
+      <div class="badge">
+        <span class="dot" aria-hidden="true"></span>
+        <span>CANAL NÃO AUTORIZADO</span>
+      </div>
+
+      <a class="btn" href="rede.html" style="text-decoration:none; display:inline-flex; align-items:center;">
+        VOLTAR
+      </a>
+    </div>
+
+    <!-- BLOQUEIO -->
+    <button id="lockCanal" class="lockbox2" type="button">
+      🔒 ACESSO BLOQUEADO<br/>
+      Requer Código 04.
+    </button>
+
+    <!-- CONTEÚDO -->
+    <section class="card" id="contentCanal" role="article" aria-label="mensagem do canal não autorizado">
+      <h1 class="title">📄 COMUNICAÇÃO ANÓNIMA — CANAL NÃO AUTORIZADO</h1>
+
+      <p class="msg">Não precisas de responder.
+Já sabemos que recebeste.
+
+Portugal nunca deixou de existir para ti, Duda.
+Tu é que fingiste que sim.
+
+O que construíste longe daqui cresceu demais para continuar invisível.
+A OIKOS fez barulho suficiente para chamar atenções que não esquecem nomes — nem famílias.
+
+Se não vieres, isto não fica contido a estruturas.
+Estruturas quebram. Pessoas aprendem da pior forma.
+
+Selena não sobreviveria a mais uma perda.
+Não porque seja fraca — mas porque já perdeu o suficiente para reconhecer quando algo não volta.
+
+Tu e Jota são mais parecidos do que vocês gostariam de admitir.
+O mesmo instinto.
+A mesma tendência para avançar quando deviam parar.
+Um erro teu não cairia só sobre ti.
+
+Aisha continua a ser o ponto de equilíbrio de demasiadas vidas ao mesmo tempo.
+E equilíbrios forçados partem sem aviso.
+
+Lucas estuda cenários.
+Analisa riscos.
+Sabe exatamente como reagir quando algo corre mal.
+Mesmo assim, nem todo o conhecimento impede consequências.
+
+Caio e Isaque ainda acreditam que o mundo responde à lógica certa.
+Não responde.
+
+Há laços que não se quebram facilmente.
+Cícero e Orfeu são desses.
+E precisamente por isso seriam os últimos a ver o perigo chegar.
+
+Manu Ferrari continua por perto porque confia em ti.
+Confiança, nestes contextos, costuma ser o primeiro erro.
+
+Isa Callas não devia estar tão exposta.
+Amaya aparece em lugares errados com demasiada frequência.
+
+Faby e Kassandra reparam em detalhes que outros ignoram.
+E detalhes acumulam-se.
+
+GBR ainda acredita que te pode proteger.
+Essa convicção tem um custo quando é testada.
+
+Nada disto é uma ameaça direta.
+É uma leitura simples de padrões antigos — padrões que tu conheces melhor do que ninguém.
+
+Quando a cabeça não aparece, a pressão desce.
+Sempre foi assim.
+
+Vem sozinha.
+Vem rápido.
+E não tragas o passado contigo — ele nunca saiu daqui.
+
+—
+
+(transmissão encerrada)</p>
+    </section>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modalBack" id="codeModal" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <p class="modalTitle" id="modalTitle">Inserir código</p>
+        <button class="modalClose" id="modalClose" type="button">FECHAR</button>
+      </div>
+
+      <form id="modalForm" class="modalRow">
+        <input id="modalCode" type="text" placeholder="padrão / data / associação" autocomplete="off" />
+        <button class="btn" type="submit">VALIDAR</button>
+      </form>
+
+      <div class="modalMsg" id="modalMsg"></div>
+    </div>
+  </div>
+
+  <!-- scripts -->
+  <script src="assets/js/keys.js"></script>
+  <script src="assets/js/net.js"></script>
+
+  <script>
+    // ===== Canal gate standalone (não depende do app.js) =====
+    (function(){
+      const lock = document.getElementById("lockCanal");
+      const content = document.getElementById("contentCanal");
+
+      const modal = document.getElementById("codeModal");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalMsg = document.getElementById("modalMsg");
+      const modalClose = document.getElementById("modalClose");
+      const modalForm = document.getElementById("modalForm");
+      const modalCode = document.getElementById("modalCode");
+
+      function norm(v){
+        return (v || "").toString().trim().toLowerCase().replace(/\s+/g," ");
+      }
+
+      function lockUI(){
+        if (lock) lock.style.display = "block";
+        if (content) content.style.display = "none";
+      }
+
+      function unlockUI(){
+        if (lock) lock.style.display = "none";
+        if (content) content.style.display = "block";
+      }
+
+      function openModal(){
+        if (!modal) return;
+        if (modalTitle) modalTitle.textContent = "Requer Código 04 — Canal não autorizado";
+        if (modalMsg) modalMsg.textContent = "";
+        if (modalCode) modalCode.value = "";
+        modal.style.display = "flex";
+        setTimeout(()=> modalCode && modalCode.focus(), 30);
+      }
+
+      function closeModal(){
+        if (!modal) return;
+        modal.style.display = "none";
+      }
+
+      modalClose && modalClose.addEventListener("click", closeModal);
+      modal && modal.addEventListener("click", (e)=> { if (e.target === modal) closeModal(); });
+
+      function validateC04(input){
+        const keys = window.OIKOS_KEYS;
+        if (!keys) return { ok:false, msg:"× keys.js não carregado" };
+
+        const list = keys.CODE_04;
+        if (!Array.isArray(list)) return { ok:false, msg:"× CODE_04 não existe no keys.js" };
+
+        const x = norm(input);
+        const nlist = list.map(norm);
+        const ok = nlist.includes(x);
+        return { ok, msg: ok ? "✓ padrão reconhecido" : "× padrão não reconhecido" };
+      }
+
+      modalForm && modalForm.addEventListener("submit", (e)=>{
+        e.preventDefault();
+        const code = (modalCode && modalCode.value) ? modalCode.value : "";
+        const res = validateC04(code);
+        if (modalMsg) modalMsg.textContent = res.msg;
+
+        if (res.ok){
+          setTimeout(()=>{
+            closeModal();
+            unlockUI();
+          }, 180);
+        }
+      });
+
+      // abrir sempre ao entrar
+      lockUI();
+      openModal();
+
+      // clicar no lock abre modal outra vez
+      lock && lock.addEventListener("click", openModal);
+    })();
+  </script>
+</body>
+</html>

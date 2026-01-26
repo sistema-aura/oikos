@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OIKOS — Se eu não voltar</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body class="net">
+  <canvas id="netCanvas"></canvas>
+
+  <div class="hud" id="naoVolteiRoot">
+    <!-- TOP BAR -->
+    <div class="panel hud-top">
+      <div class="hud-brand">
+        <div class="logo">OIKOS</div>
+        <div class="status">Abertura condicionada. Este registo só existe em último recurso.</div>
+      </div>
+      <div class="hud-actions" style="gap:10px;">
+        <a class="btn" href="rede.html" style="text-decoration:none;">VOLTAR</a>
+        <button class="btn" id="btnLogout" type="button">SAIR</button>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div class="panel hud-left">
+
+      <!-- BLOQUEIO -->
+      <button id="lockNaoVolteiPage" class="lockbox2" type="button" style="display:none;">
+        🔒 ACESSO BLOQUEADO<br/>
+        Requer Código 03 — Se eu não voltar.
+      </button>
+
+      <!-- CONTEÚDO REAL (só após Código 03) -->
+      <div id="contentNaoVolteiPage" style="display:none;">
+        <div class="view" style="margin-bottom:14px;">
+          <p class="msgTitle" style="margin:0;">⚠️ SE EU NÃO VOLTAR</p>
+          <p class="msgText" style="margin-top:8px;">
+            Este registo não foi escrito para ser lido em circunstâncias normais.<br/>
+            Foi preparado para o caso de ausência prolongada.
+          </p>
+        </div>
+
+        <div class="view">
+          <p class="msgTitle" style="margin:0 0 8px;">REGISTO</p>
+
+          <!-- ✏️ ESCREVE AQUI O RESUMO -->
+          <p class="msgText" style="margin:0;">
+Se estás a ler isto, é porque esta mensagem precisava de existir.
+
+Avisei apenas a Aisha antes de sair. Não foi preferência, foi necessidade. Depois disso, deixei de responder a tudo de propósito. Quanto mais silêncio, menos risco para quem ficava. Se alguém se perguntou porquê, agora entende: eu precisava desaparecer antes que outros fossem puxados para isto.
+
+O motivo de eu ter ido a Portugal não foi escolha. Foi pressão direta. Recebi uma ameaça clara: se eu não fosse, tudo iria cair. Não falaram de mim. Falaram de quem estava comigo. Falaram da minha família dentro da AURA. Quando o aviso chega assim, não há espaço para fingir que não ouvi.
+
+O nome do meu pai voltou a circular.
+E quando isso acontece, não é por nostalgia.
+
+Tudo o que estava em nome dele passou para mim. Sou a única herdeira direta, e isso transforma qualquer informação antiga num risco imediato. Eu sabia que, ao aparecer, deixaria de ser apenas alguém a observar. Passaria a ser o ponto de pressão.
+
+Fui sabendo disso.
+Fui sabendo que poderia não ter controlo sobre a saída.
+Fui sabendo que, se alguém quisesse provar um ponto, eu seria o teste.
+
+Se esta mensagem foi aberta, então algo correu exatamente como eu temia.
+
+Não interpretem isto como desistência.
+Interpretem como aviso.
+
+Não façam movimentos rápidos.
+Não confiem em silêncios estranhos.
+Não assumam que ausência é escolha.
+
+Este sistema existe porque já houve momentos em que falar não era possível. Porque já houve situações em que estar presente significava perigo. Se cheguei ao ponto de precisar disto outra vez, então é porque não estou a agir livremente.
+
+Se alguém estiver a ler isto e sentir que algo está errado, confia nisso. Não é impressão. É sinal.
+
+Eu fui para Portugal para impedir que outros fossem atingidos.
+Se eu não voltar, é porque mantiveram a promessa que fizeram.
+
+A casa protege-se absorvendo o impacto.
+Mas impacto nenhum deve ser ignorado.
+
+Se esta mensagem chegou até ti,
+então presta atenção:
+isto é importante.<br/><br/>
+            Este texto existe apenas para garantir que a verdade não se perde
+            caso a comunicação seja interrompida.
+            <br/><br/>
+            — Duda
+          </p>
+
+          <div style="margin-top:14px; border-top:1px solid rgba(120,255,214,.14); padding-top:12px;">
+            <p class="msgText" style="margin:0; opacity:.75;">
+              Se estás a ler isto, o padrão foi confirmado.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CÓDIGO -->
+  <div class="modalBack" id="codeModal" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <p class="modalTitle" id="modalTitle">Inserir código</p>
+        <button class="modalClose" id="modalClose" type="button">FECHAR</button>
+      </div>
+
+      <form id="modalForm" class="modalRow">
+        <input
+          id="modalCode"
+          type="text"
+          placeholder="padrão / data / associação"
+          autocomplete="off"
+        />
+        <button class="btn" type="submit">VALIDAR</button>
+      </form>
+
+      <div class="modalMsg" id="modalMsg"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/keys.js"></script>
+  <script src="assets/js/net.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

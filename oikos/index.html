@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OIKOS</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body class="net">
+  <canvas id="netCanvas"></canvas>
+
+  <!-- CENTRO -->
+  <main class="center" aria-hidden="true">
+    <div class="hero">
+      <!-- imagem de fundo / símbolo -->
+      <img
+        src="assets/img/oikos-raposa.png"
+        alt=""
+        class="hero-bg"
+        draggable="false"
+      />
+
+      <!-- texto à frente -->
+      <h1 class="oikos">OIKOS</h1>
+    </div>
+  </main>
+
+  <!-- LOGIN -->
+  <aside class="corner">
+    <form id="loginForm" class="corner-card" autocomplete="off">
+      <input
+        id="senha"
+        type="password"
+        placeholder="chave"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Chave de acesso"
+      />
+      <button type="submit" aria-label="Entrar">↵</button>
+    </form>
+    <div id="loginMsg" class="corner-msg" aria-live="polite"></div>
+  </aside>
+
+  <!-- scripts (ORDEM IMPORTA) -->
+  <script src="assets/js/keys.js"></script>
+  <script src="assets/js/net.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <!-- RESET SECRETO (opcional) -->
+  <script>
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === "R" || e.key === "r")) {
+        e.preventDefault();
+        localStorage.clear();
+        location.reload();
+      }
+    });
+  </script>
+</body>
+</html>

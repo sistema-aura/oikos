@@ -1,0 +1,506 @@
+/* ================================
+   OIKOS — HACKER NETWORK (FINAL CLEAN)
+   ================================ */
+
+:root{
+  --bg:#02040a;
+  --neon:#78ffd6;
+  --text:#e8edf6;
+  --muted:#8aa1a8;
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+
+  --topOffset: 84px; /* distância abaixo da barra superior */
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+}
+
+body.net{
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  overflow:hidden;
+}
+
+/* ================================
+   CANVAS — REDE
+   ================================ */
+
+#netCanvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+  z-index:0;
+}
+
+/* ================================
+   INDEX — OIKOS (centro) + canto login
+   ================================ */
+
+.center{
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+  z-index:2;
+}
+
+.oikos{
+  margin:0;
+  font-size: clamp(64px, 8vw, 120px);
+  font-weight:900;
+  letter-spacing:18px;
+  color: var(--neon);
+  text-shadow:
+    0 0 18px rgba(120,255,214,.35),
+    0 0 60px rgba(120,255,214,.18),
+    0 0 140px rgba(120,255,214,.08);
+}
+
+.corner{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:8px;
+  z-index:3;
+}
+
+.corner-card{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(120,255,214,.25);
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 70px rgba(0,0,0,.6);
+}
+
+.corner-card input{
+  width:190px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(120,255,214,.25);
+  background: rgba(0,0,0,.45);
+  color: var(--text);
+  outline:none;
+  font-family: var(--mono);
+}
+
+.corner-card input::placeholder{ color: rgba(232,237,246,.45); }
+
+.corner-card input:focus{
+  border-color: var(--neon);
+  box-shadow: 0 0 0 4px rgba(120,255,214,.15);
+}
+
+.corner-card button{
+  width:46px;
+  height:42px;
+  border-radius:12px;
+  border:1px solid rgba(120,255,214,.45);
+  background: rgba(120,255,214,.15);
+  color: var(--text);
+  cursor:pointer;
+  font-family: var(--mono);
+}
+
+.corner-card button:hover{ background: rgba(120,255,214,.25); }
+
+.corner-msg{
+  min-height:14px;
+  font-size:12px;
+  font-family: var(--mono);
+  color: rgba(120,255,214,.7);
+}
+
+/* ================================
+   REDE — HUD
+   ================================ */
+
+.hud{
+  position:fixed;
+  inset:0;
+  z-index:3;
+  pointer-events:none;
+}
+
+.hud .panel{
+  pointer-events:auto;
+  position:absolute;
+  border:1px solid rgba(120,255,214,.22);
+  background: rgba(0,0,0,.32);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 70px rgba(0,0,0,.6);
+  border-radius:14px;
+}
+
+/* Top bar */
+.hud-top{
+  top:16px;
+  left:16px;
+  right:16px;
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.hud-brand{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.hud-brand .logo{
+  font-weight:900;
+  letter-spacing:8px;
+  color:rgba(120,255,214,.92);
+  font-size:16px;
+}
+
+.hud-brand .status{
+  font-family: var(--mono);
+  font-size:12px;
+  color: rgba(232,237,246,.70);
+}
+
+.hud-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.btn{
+  pointer-events:auto;
+  border:1px solid rgba(120,255,214,.35);
+  background: rgba(120,255,214,.12);
+  color: rgba(232,237,246,.92);
+  border-radius:12px;
+  padding:10px 12px;
+  font-family: var(--mono);
+  cursor:pointer;
+}
+
+.btn:hover{ background: rgba(120,255,214,.20); }
+
+/* Workspace full width */
+.hud-left{
+  top: calc(16px + var(--topOffset));
+  left:16px;
+  right:16px;
+  bottom:16px;
+
+  padding:16px;
+  overflow:auto;
+
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+/* Tabs */
+.tabs2{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:0;
+}
+
+.tab2{
+  border:1px solid rgba(120,255,214,.18);
+  background: rgba(0,0,0,.28);
+  color: rgba(232,237,246,.70);
+  padding:10px 12px;
+  border-radius:12px;
+  font-family: var(--mono);
+  cursor:pointer;
+}
+
+.tab2.active{
+  border-color: rgba(120,255,214,.55);
+  background: rgba(120,255,214,.14);
+  color: rgba(232,237,246,.92);
+}
+
+/* Panel content */
+.view{
+  border:1px solid rgba(120,255,214,.14);
+  background: rgba(0,0,0,.22);
+  border-radius:12px;
+  padding:12px;
+
+  flex: 1 1 auto;
+  width:100%;
+  min-height:0;
+
+  display:flex;
+  flex-direction:column;
+}
+
+/* lock (clicável) */
+.lockbox2{
+  border:1px solid rgba(255,107,107,.28);
+  background: rgba(255,107,107,.06);
+  border-radius:12px;
+  padding:12px;
+  font-family: var(--mono);
+  font-size:12px;
+  color: rgba(255,107,107,.92);
+  line-height:1.55;
+
+  cursor:pointer;
+  text-align:left;
+  width:100%;
+}
+
+.lockbox2:active{ transform: translateY(1px); }
+
+/* ================================
+   Mensagens — lista + detalhe
+   ================================ */
+
+.msgGrid{
+  display:grid;
+  grid-template-columns: 220px 1fr;
+  gap:10px;
+
+  flex:1 1 auto;
+  width:100%;
+  min-height:0;
+}
+
+@media (max-width: 680px){
+  .msgGrid{ grid-template-columns: 1fr; }
+}
+
+.msgList{
+  border:1px solid rgba(120,255,214,.14);
+  background: rgba(0,0,0,.20);
+  border-radius:12px;
+  padding:10px;
+}
+
+.msgBtn{
+  width:100%;
+  text-align:left;
+  border:1px solid rgba(120,255,214,.14);
+  background: rgba(0,0,0,.26);
+  color: rgba(232,237,246,.82);
+  border-radius:12px;
+  padding:10px;
+  cursor:pointer;
+  font-family: var(--mono);
+  margin-bottom:8px;
+}
+
+.msgBtn:hover{ background: rgba(120,255,214,.10); }
+
+.msgBtn.active{
+  border-color: rgba(120,255,214,.55);
+  background: rgba(120,255,214,.14);
+}
+
+.msgView{
+  border:1px solid rgba(120,255,214,.14);
+  background: rgba(0,0,0,.20);
+  border-radius:12px;
+  padding:12px;
+
+  flex:1 1 auto;
+  min-height:170px;
+  overflow:auto;
+}
+
+.msgTitle{
+  margin:0 0 8px;
+  font-family: var(--mono);
+  color: rgba(120,255,214,.92);
+  font-size:12px;
+}
+
+.msgText{
+  margin:0;
+  font-family: var(--mono);
+  font-size:12px;
+  color: rgba(232,237,246,.70);
+  line-height:1.55;
+  white-space:pre-wrap;
+}
+
+/* ================================
+   Arquivo — cards
+   ================================ */
+
+.list2{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap:10px;
+}
+
+.item2{
+  border:1px solid rgba(120,255,214,.14);
+  background: rgba(0,0,0,.22);
+  border-radius:12px;
+  padding:10px;
+}
+
+.item2 .h{
+  font-family: var(--mono);
+  font-size:12px;
+  color: rgba(120,255,214,.92);
+  margin:0 0 6px;
+}
+
+.item2 .p{
+  margin:0;
+  font-size:12px;
+  color: rgba(232,237,246,.65);
+  line-height:1.45;
+  font-family: var(--mono);
+}
+
+/* ================================
+   Modal — pedir código só quando precisa
+   ================================ */
+
+.modalBack{
+  position:fixed;
+  inset:0;
+  background: rgba(0,0,0,.55);
+  z-index:10;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+
+.modal{
+  width:min(520px, 100%);
+  border:1px solid rgba(120,255,214,.22);
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 70px rgba(0,0,0,.7);
+  border-radius:14px;
+  padding:14px;
+}
+
+.modalHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.modalTitle{
+  margin:0;
+  font-family: var(--mono);
+  font-size:12px;
+  color: rgba(232,237,246,.78);
+}
+
+.modalClose{
+  border:1px solid rgba(120,255,214,.25);
+  background: rgba(120,255,214,.10);
+  border-radius:12px;
+  padding:8px 10px;
+  font-family: var(--mono);
+  cursor:pointer;
+}
+
+.modalRow{
+  display:flex;
+  gap:10px;
+}
+
+.modalRow input{
+  flex:1;
+  min-width:0;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(120,255,214,.18);
+  background: rgba(0,0,0,.45);
+  color: rgba(232,237,246,.92);
+  font-family: var(--mono);
+  outline:none;
+}
+
+.modalRow input:focus{
+  border-color: rgba(120,255,214,.55);
+  box-shadow: 0 0 0 4px rgba(120,255,214,.12);
+}
+
+.modalMsg{
+  margin-top:10px;
+  font-family: var(--mono);
+  font-size:12px;
+  color: rgba(232,237,246,.60);
+  min-height: 16px;
+}
+#netCanvas{ pointer-events:none; }
+
+/* ================================
+   OIKOS — imagem central atrás do título
+   ================================ */
+
+.hero{
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 0;
+}
+
+.hero-bg{
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+
+  /* tamanho: ajusta aqui */
+  width: min(880px, 90vw);
+  max-width: 1000px;
+
+  opacity: .22;
+  pointer-events: none;
+  user-select: none;
+
+  /* “neon watermark” */
+  filter:
+    blur(.2px)
+    drop-shadow(0 0 18px rgba(120,255,214,.35))
+    drop-shadow(0 0 70px rgba(120,255,214,.18));
+}
+
+/* garante que o texto fica por cima */
+.hero .oikos{
+  position: relative;
+  z-index: 1;
+}
+
+/* FORÇA SCROLL VERTICAL */
+html, body {
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
+body.net {
+  min-height: 100vh;
+  overflow-y: auto !important;
+}
