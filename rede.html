@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OIKOS — Rede</title>
   <link rel="stylesheet" href="assets/css/style.css" />
+
+  <!-- FIX: o canvas não pode bloquear cliques no HUD (admin secreto) -->
+  <style>
+    #netCanvas { pointer-events: none !important; }
+    .hud, .panel { position: relative; z-index: 2; }
+    .hud-top { z-index: 3; }
+    .logo { pointer-events: auto; user-select: none; }
+  </style>
 </head>
 
 <body class="net">
@@ -38,27 +46,28 @@
            style="text-decoration:none; display:inline-flex; align-items:center;">
           SE EU NÃO VOLTAR
         </a>
-      </div>
-<a class="tab2"
-   href="canal_nao_autorizado.html"
-   style="
-     text-decoration:none;
-     display:inline-flex;
-     align-items:center;
-     gap:8px;
-     border-color: rgba(255,120,120,.35);
-     color: rgba(255,160,160,.95);
-   ">
-  <span style="
-    width:8px;
-    height:8px;
-    border-radius:999px;
-    background: rgba(255,120,120,.95);
-    box-shadow: 0 0 12px rgba(255,120,120,.6);
-  "></span>
-  CANAL NÃO AUTORIZADO
-</a>
 
+        <!-- CANAL NÃO AUTORIZADO (fica dentro das tabs, alinhado) -->
+        <a class="tab2"
+           href="canal_nao_autorizado.html"
+           style="
+             text-decoration:none;
+             display:inline-flex;
+             align-items:center;
+             gap:8px;
+             border-color: rgba(255,120,120,.35);
+             color: rgba(255,160,160,.95);
+           ">
+          <span style="
+            width:8px;
+            height:8px;
+            border-radius:999px;
+            background: rgba(255,120,120,.95);
+            box-shadow: 0 0 12px rgba(255,120,120,.6);
+          "></span>
+          CANAL NÃO AUTORIZADO
+        </a>
+      </div>
 
       <!-- Mensagens -->
       <div class="view" data-panel="mensagens">
@@ -132,7 +141,6 @@
   </div>
 
   <!-- MODAL -->
-  <!-- Importante: começa oculto para evitar "flash" -->
   <div class="modalBack" id="codeModal" style="display:none;">
     <div class="modal">
       <div class="modalHead">
@@ -153,5 +161,11 @@
   <script src="assets/js/keys.js"></script>
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
+
+  <!-- força pointer-events do canvas mesmo se net.js mexer -->
+  <script>
+    const c = document.getElementById("netCanvas");
+    if (c) c.style.pointerEvents = "none";
+  </script>
 </body>
 </html>
