@@ -6,7 +6,7 @@
   <title>OIKOS — Rede</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 
-  <!-- FIX: o canvas não pode bloquear cliques (admin secreto) -->
+  <!-- FIX: canvas não rouba cliques + HUD sempre por cima -->
   <style>
     #netCanvas { pointer-events: none !important; }
     .hud, .panel { position: relative; z-index: 2; }
@@ -34,6 +34,8 @@
 
     <!-- Workspace -->
     <div class="panel hud-left">
+
+      <!-- TABS (tudo aqui dentro) -->
       <div class="tabs2">
         <button class="tab2 active" data-tab="mensagens" type="button">MENSAGENS</button>
 
@@ -67,6 +69,7 @@
           CANAL NÃO AUTORIZADO
         </a>
       </div>
+      <!-- /TABS -->
 
       <!-- Mensagens -->
       <div class="view" data-panel="mensagens">
