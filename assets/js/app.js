@@ -8,14 +8,12 @@
 
 const OIKOS = {
   S: {
-    // sessão
     logged: "oikos_logged_session",
     c01: "oikos_c01_session",
     c02: "oikos_c02_session",
     c03: "oikos_c03_session",
     admin: "oikos_admin_session",
 
-    // persistente
     threads: "oikos_threads",
     adminName: "oikos_admin_name"
   },
@@ -28,10 +26,8 @@ const OIKOS = {
     c02: false,
     c03: false,
     admin: false,
-
-    // sub-acessos (sessão)
-    archiveFolders: {}, // { Ice:true, ... }
-    archiveFiles: {}    // { "Ice/relatorio.pdf":true, ... }
+    archiveFolders: {},
+    archiveFiles: {}
   },
 
   norm(v) {
@@ -42,22 +38,9 @@ const OIKOS = {
       .replace(/\s+/g, " ");
   },
 
-  // 🔧 resolve "Ice" vs "ice" (devolve a key real do objeto)
-  resolveKey(obj, rawKey) {
-    if (!obj) return rawKey;
-    if (Object.prototype.hasOwnProperty.call(obj, rawKey)) return rawKey;
-
-    const target = this.norm(rawKey);
-    const found = Object.keys(obj).find(k => this.norm(k) === target);
-    return found || rawKey;
-  },
-
-  // ===== session helpers =====
   sget(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
   sset(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
-  sdel(k) { try { sessionStorage.removeItem(k); } catch {} },
 
-  // ===== Login =====
   isLogged() { return this.sget(this.S.logged) === "1"; },
 
   requireLogin() {
@@ -68,6 +51,7 @@ const OIKOS = {
     const x = this.norm(pass);
     const list = (window.OIKOS_KEYS?.LOGIN || []).map(v => this.norm(v));
     const ok = list.includes(x);
+
     if (ok) {
       this.sset(this.S.logged, "1");
       this.ensureThreads();
@@ -95,7 +79,6 @@ const OIKOS = {
     if (type === "admin") { this.mem.admin = true; this.sset(this.S.admin, "1"); }
   },
 
-  // ===== Codes =====
   checkCode(code, type, target = null) {
     const x = this.norm(code);
 
@@ -107,19 +90,15 @@ const OIKOS = {
       admin: window.OIKOS_KEYS?.ADMIN || []
     };
 
-    // ✅ PASTA: resolve key real mesmo se vier "ice" e o keys tiver "Ice"
     if (type === "archiveFolder") {
       const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
-      const realKey = this.resolveKey(folderMap, target || "");
-      const list = (folderMap[realKey] || []).map(v => this.norm(v));
+      const list = (folderMap[target] || []).map(v => this.norm(v));
       return list.includes(x);
     }
 
-    // ✅ FICHEIRO: resolve key real mesmo com diferenças
     if (type === "archiveFile") {
       const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
-      const realKey = this.resolveKey(fileMap, target || "");
-      const list = (fileMap[realKey] || []).map(v => this.norm(v));
+      const list = (fileMap[target] || []).map(v => this.norm(v));
       return list.includes(x);
     }
 
@@ -127,24 +106,29 @@ const OIKOS = {
     return list.includes(x);
   },
 
-  // ===== Admin name =====
   getAdminName() { return localStorage.getItem(this.S.adminName) || "ADMIN"; },
   setAdminName(v) {
     const name = (v || "").toString().trim();
     if (name) localStorage.setItem(this.S.adminName, name);
   },
 
-  // ===== Threads =====
   getThreads() {
     try { return JSON.parse(localStorage.getItem(this.S.threads)) || {}; }
     catch { return {}; }
   },
-  setThreads(t) { localStorage.setItem(this.S.threads, JSON.stringify(t)); },
+
+  setThreads(t) {
+    localStorage.setItem(this.S.threads, JSON.stringify(t));
+  },
+
   ensureThreads() {
     const t = this.getThreads();
-    this.DEFAULT_THREADS.forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+    this.DEFAULT_THREADS.forEach(k => {
+      if (!Array.isArray(t[k])) t[k] = [];
+    });
     this.setThreads(t);
   },
+
   pushMessage(who, name, text) {
     const key = this.norm(who);
     const threads = this.getThreads();
@@ -153,12 +137,10 @@ const OIKOS = {
     this.setThreads(threads);
   },
 
-  // ===== Arquivo session access =====
   hasFolderAccess(folder) { return !!this.mem.archiveFolders[(folder || "").toString()]; },
   hasFileAccess(filePath) { return !!this.mem.archiveFiles[(filePath || "").toString()]; }
 };
 
-// Helpers
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
 
@@ -178,8 +160,8 @@ function setupCodeModal() {
   modal.style.display = "none";
 
   let pendingAction = null;
-  let requiredType = null;     // c01|c02|c03|admin|archiveFolder|archiveFile|c04
-  let requiredTarget = null;   // pasta ou "Pasta/ficheiro.ext"
+  let requiredType = null;
+  let requiredTarget = null;
   let onClose = null;
 
   function openModal(title, type, action, opts = {}) {
@@ -226,21 +208,15 @@ function setupCodeModal() {
     if (modalMsg) modalMsg.textContent = ok ? "✓ padrão reconhecido" : "× padrão não reconhecido";
 
     if (ok) {
-      // principais -> guardam sessão
       if (requiredType === "c01" || requiredType === "c02" || requiredType === "c03" || requiredType === "admin") {
         OIKOS.markUnlocked(requiredType);
       }
 
-      // subpastas / subficheiros -> sessão também
       if (requiredType === "archiveFolder" && requiredTarget) {
-        const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
-        const real = OIKOS.resolveKey(folderMap, requiredTarget);
-        OIKOS.mem.archiveFolders[real] = true;
+        OIKOS.mem.archiveFolders[requiredTarget] = true;
       }
       if (requiredType === "archiveFile" && requiredTarget) {
-        const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
-        const real = OIKOS.resolveKey(fileMap, requiredTarget);
-        OIKOS.mem.archiveFiles[real] = true;
+        OIKOS.mem.archiveFiles[requiredTarget] = true;
       }
 
       setTimeout(() => {
@@ -262,7 +238,7 @@ function bindSecretReset() {
       try { sessionStorage.clear(); } catch {}
       location.reload();
     }
-  });
+  }, true);
 }
 
 // ========= INDEX =========
@@ -325,6 +301,7 @@ function initRede() {
     }
   }
 
+  // default
   setTab("mensagens");
   if (OIKOS.mem.c01) showMensagensUnlocked();
   else showMensagensLocked();
@@ -358,10 +335,158 @@ function initRede() {
     openModal("Requer Código 03 — Se eu não voltar", "c03", () => window.location.href = "nao-voltei.html");
   });
 
+  // ========= ADMIN =========
+  let adminActive = null;
+
+  function renderThread(who, targetEl) {
+    const key = OIKOS.norm(who);
+    const threads = OIKOS.getThreads();
+    const items = threads[key] || [];
+    targetEl.innerHTML = "";
+
+    items.forEach((m) => {
+      const wrap = document.createElement("div");
+      wrap.style.border = "1px solid rgba(120,255,214,.14)";
+      wrap.style.background = "rgba(0,0,0,.22)";
+      wrap.style.borderRadius = "12px";
+      wrap.style.padding = "10px";
+      wrap.style.fontFamily = "var(--mono)";
+      wrap.style.fontSize = "12px";
+      wrap.style.color = "rgba(232,237,246,.82)";
+
+      const whoLine = document.createElement("div");
+      whoLine.style.marginBottom = "6px";
+      whoLine.textContent = m.name || "—";
+      whoLine.style.color = (m.name === OIKOS.USER_NAME)
+        ? "rgba(232,237,246,.75)"
+        : "rgba(120,255,214,.95)";
+
+      const text = document.createElement("div");
+      text.style.whiteSpace = "pre-wrap";
+      text.textContent = m.text;
+
+      wrap.appendChild(whoLine);
+      wrap.appendChild(text);
+      targetEl.appendChild(wrap);
+    });
+
+    targetEl.scrollTop = targetEl.scrollHeight;
+  }
+
+  function renderAdmin() {
+    if (!OIKOS.mem.admin) return;
+
+    const box = $("#adminThreads");
+    const adminLog = $("#adminLog");
+    const adminTitle = $("#adminTitle");
+    const adminName = $("#adminName");
+    if (!box || !adminLog || !adminTitle) return;
+
+    if (adminName) adminName.value = OIKOS.getAdminName();
+
+    OIKOS.ensureThreads();
+    const threads = OIKOS.getThreads();
+    const allKeys = Array.from(new Set([...OIKOS.DEFAULT_THREADS, ...Object.keys(threads)]));
+
+    box.innerHTML = "";
+
+    allKeys.forEach((k) => {
+      const key = OIKOS.norm(k);
+      const card = document.createElement("div");
+      card.className = "item2";
+      card.style.cursor = "pointer";
+      card.innerHTML = `<p class="h">${key.toUpperCase()}</p><p class="p">${(threads[key] || []).length} mensagens</p>`;
+      card.addEventListener("click", () => {
+        adminActive = key;
+        adminTitle.textContent = "RESPOSTA — " + key.toUpperCase();
+        renderThread(key, adminLog);
+      });
+      box.appendChild(card);
+    });
+  }
+
+  $("#adminForm")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!OIKOS.mem.admin) return;
+    if (!adminActive) return;
+
+    const nameInput = $("#adminName");
+    const inp = $("#adminInput");
+
+    const chosen = (nameInput?.value || "").trim();
+    const text = (inp?.value || "").trim();
+
+    if (chosen) OIKOS.setAdminName(chosen);
+
+    const finalName = chosen || OIKOS.getAdminName();
+    if (!text) return;
+
+    OIKOS.pushMessage(adminActive, finalName, text);
+    if (inp) inp.value = "";
+
+    renderAdmin();
+    const adminLog = $("#adminLog");
+    if (adminLog) renderThread(adminActive, adminLog);
+  });
+
+  function openAdminGate() {
+    openModal("Área reservada — ADMIN", "admin", () => {
+      setTab("admin");
+      renderAdmin();
+    });
+  }
+
+  // ✅ ATALHOS MAIS COMPATÍVEIS: usa e.code (KeyA), não e.key
+  // E usa capture=true para ninguém “comer” o evento antes
+  document.addEventListener("keydown", (e) => {
+    const code = e.code; // "KeyA"
+    const isA = (code === "KeyA");
+    const isBackup = (code === "Digit1"); // Ctrl+Shift+1 backup
+
+    if (e.ctrlKey && e.shiftKey && isA) {
+      e.preventDefault();
+      openAdminGate();
+    }
+
+    if (e.ctrlKey && e.altKey && isA) {
+      e.preventDefault();
+      openAdminGate();
+    }
+
+    if (e.ctrlKey && e.shiftKey && isBackup) {
+      e.preventDefault();
+      openAdminGate();
+    }
+  }, true);
+
+  // ✅ BACKUP IMPOSSÍVEL DE FALHAR: clique 7x no logo OIKOS
+  const logo = root.querySelector(".logo");
+  if (logo) {
+    let clicks = 0;
+    let timer = null;
+
+    logo.style.cursor = "pointer";
+
+    logo.addEventListener("click", () => {
+      clicks += 1;
+
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { clicks = 0; }, 900); // janela curta
+
+      if (clicks >= 7) {
+        clicks = 0;
+        openAdminGate();
+      }
+    });
+  }
+
+  // (Opcional) botão admin visível — se quiseres, cria em HTML e descomenta:
+  // document.getElementById("btnAdmin")?.addEventListener("click", openAdminGate);
+
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
 
-// ========= ARQUIVO (UI nova: folderList + fileList + viewer) =========
+// ========= ARQUIVO =========
 function initArquivos() {
   const root = $("#arquivoRoot");
   if (!root) return;
@@ -372,22 +497,6 @@ function initArquivos() {
 
   const lock = $("#lockArquivoPage");
   const content = $("#contentArquivoPage");
-
-  const folderList = $("#folderList");
-  const folderStatus = $("#folderStatus");
-
-  const fileList = $("#fileList");
-  const fileStatus = $("#fileStatus");
-
-  const viewerTitle = $("#viewerTitle");
-  const viewerHint = $("#viewerHint");
-  const viewerBox = $("#viewerBox");
-  const pdfFrame = $("#pdfFrame");
-  const imgView = $("#imgView");
-  const viewerError = $("#viewerError");
-  const openNewTab = $("#openNewTab");
-  const closeViewer = $("#closeViewer");
-
   const { openModal } = setupCodeModal();
 
   function lockUI() {
@@ -399,160 +508,12 @@ function initArquivos() {
     if (content) content.style.display = "block";
   }
 
-  function extOf(path){
-    const m = (path || "").toLowerCase().match(/\.([a-z0-9]+)$/);
-    return m ? m[1] : "";
-  }
-
-  function resetViewer(){
-    if(viewerBox) viewerBox.style.display = "none";
-    if(pdfFrame){ pdfFrame.style.display = "none"; pdfFrame.removeAttribute("src"); }
-    if(imgView){ imgView.style.display = "none"; imgView.removeAttribute("src"); }
-    if(viewerError){ viewerError.style.display = "none"; viewerError.textContent = ""; }
-    if(openNewTab){ openNewTab.style.display = "none"; openNewTab.href = "#"; }
-    if(closeViewer){ closeViewer.style.display = "none"; }
-    if(viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO";
-    if(viewerHint) viewerHint.style.display = "block";
-  }
-
-  function showError(msg){
-    if(viewerBox) viewerBox.style.display = "block";
-    if(pdfFrame) pdfFrame.style.display = "none";
-    if(imgView) imgView.style.display = "none";
-    if(viewerError){
-      viewerError.style.display = "block";
-      viewerError.textContent = msg || "Não foi possível abrir.";
-    }
-    if(closeViewer) closeViewer.style.display = "inline-flex";
-    if(viewerHint) viewerHint.style.display = "none";
-  }
-
-  function openFile(fileKey){
-    // ✅ caminho robusto (funciona em subpastas)
-    const url = "./arquivos/" + fileKey.split("/").map(encodeURIComponent).join("/");
-
-
-    const ext = extOf(url);
-
-    if(viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO — " + fileKey;
-    if(viewerHint) viewerHint.style.display = "none";
-    if(viewerBox) viewerBox.style.display = "block";
-    if(viewerError) viewerError.style.display = "none";
-    if(closeViewer) closeViewer.style.display = "inline-flex";
-
-    if(openNewTab){
-      openNewTab.href = url;
-      openNewTab.style.display = "inline-flex";
-    }
-
-    // ✅ APENAS PNG
-    if (ext === "png") {
-      if (pdfFrame) {
-        pdfFrame.style.display = "none";
-        pdfFrame.removeAttribute("src");
-      }
-
-      if (imgView) {
-        imgView.style.display = "block";
-        imgView.src = url;
-        imgView.onerror = () => showError("Imagem não encontrada.");
-      }
-      return;
-    }
-
-    showError("Apenas ficheiros PNG são permitidos.");
-  }
-
-  function requireFolder(folder, cb){
-    const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
-    const realFolder = OIKOS.resolveKey(folderMap, folder);
-
-    if (OIKOS.hasFolderAccess(realFolder)) return cb();
-
-    openModal("Requer sub-código — " + realFolder, "archiveFolder", cb, { target: realFolder });
-  }
-
-  function requireFile(fileKey, cb){
-    const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
-    const realFileKey = OIKOS.resolveKey(fileMap, fileKey);
-
-    if (!fileMap[realFileKey]) return cb(); // sem código próprio
-    if (OIKOS.hasFileAccess(realFileKey)) return cb();
-
-    openModal("Requer sub-código — Documento", "archiveFile", cb, { target: realFileKey });
-  }
-
-  function renderFiles(folder){
-    if (!fileList) return;
-    fileList.innerHTML = "";
-
-    const idx = window.OIKOS_KEYS?.ARCHIVE_INDEX || {};
-    const files = Array.isArray(idx[folder]) ? idx[folder] : [];
-
-    // ✅ mostra só PNG na lista
-    const pngs = files.filter(n => (n || "").toLowerCase().endsWith(".png"));
-
-    if(!pngs.length){
-      if (fileStatus) fileStatus.textContent = "Sem ficheiros PNG listados para esta pasta (ARCHIVE_INDEX).";
-      return;
-    }
-
-    if (fileStatus) fileStatus.textContent = "Seleciona um ficheiro para abrir.";
-
-    pngs.forEach((name)=>{
-      const fileKey = folder + "/" + name;
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "item2 fileBtn";
-
-      btn.innerHTML = `
-        <p class="h">${name}</p>
-        <div class="fileMeta">
-          <span class="pill">PNG</span>
-          <span class="pill">${folder}</span>
-        </div>
-      `;
-
-      btn.addEventListener("click", ()=>{
-        requireFile(fileKey, () => openFile(fileKey));
-      });
-
-      fileList.appendChild(btn);
-    });
-  }
-
-  closeViewer && closeViewer.addEventListener("click", resetViewer);
-  resetViewer();
-
-  // Gate principal: Código 02
   if (OIKOS.mem.c02) unlockUI();
   else {
     lockUI();
     openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI());
   }
   lock?.addEventListener("click", () => openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI()));
-
-  // clicar pastas
-  folderList && folderList.addEventListener("click",(e)=>{
-    const btn = e.target.closest("[data-folder]");
-    if(!btn) return;
-    const folder = btn.getAttribute("data-folder");
-    if(!folder) return;
-
-    resetViewer();
-    if(folderStatus) folderStatus.textContent = "Verificando acesso — " + folder + "…";
-    if(fileStatus) fileStatus.textContent = "Aguardando…";
-    if(fileList) fileList.innerHTML = "";
-
-    requireFolder(folder, ()=>{
-      const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
-      const realFolder = OIKOS.resolveKey(folderMap, folder);
-
-      if(folderStatus) folderStatus.textContent = "✓ Pasta desbloqueada: " + realFolder;
-      renderFiles(realFolder);
-    });
-  });
 
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
