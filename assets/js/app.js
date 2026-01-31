@@ -1,8 +1,12 @@
 // ================================
-// OIKOS — app.js (COMPLETO)
+// OIKOS — app.js (COMPLETO / ESTÁVEL)
 // LOGIN: 1x por sessão (sessionStorage)
 // CÓDIGOS 01/02/03/ADMIN: 1x por sessão (sessionStorage)
-// ADMIN: segredo no logo "OIKOS" -> segurar 2.2s -> abre admin.html
+// ADMIN: entra em admin.html (mesma pasta do rede.html)
+// Entradas ADMIN:
+//  - Segurar "OIKOS" 2.2s
+//  - 3x "duplo-clique" no "OIKOS" (fallback touch)
+//  - Ctrl+Shift+A (backup)
 // ================================
 
 const OIKOS = {
@@ -12,14 +16,12 @@ const OIKOS = {
     c02: "oikos_c02_session",
     c03: "oikos_c03_session",
     admin: "oikos_admin_session",
-
     threads: "oikos_threads",
     adminName: "oikos_admin_name"
   },
 
   USER_NAME: "Duda",
   DEFAULT_THREADS: ["gabriel", "alice", "ice"],
-
   mem: { c01:false, c02:false, c03:false, admin:false },
 
   norm(v) {
@@ -30,20 +32,17 @@ const OIKOS = {
       .replace(/\s+/g, " ");
   },
 
-  sget(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
-  sset(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+  sget(k){ try { return sessionStorage.getItem(k); } catch { return null; } },
+  sset(k,v){ try { sessionStorage.setItem(k,v); } catch {} },
 
-  isLogged() { return this.sget(this.S.logged) === "1"; },
+  isLogged(){ return this.sget(this.S.logged) === "1"; },
+  requireLogin(){ if (!this.isLogged()) window.location.href = "index.html"; },
 
-  requireLogin() {
-    if (!this.isLogged()) window.location.href = "index.html";
-  },
-
-  login(pass) {
+  login(pass){
     const x = this.norm(pass);
     const list = (window.OIKOS_KEYS?.LOGIN || []).map(v => this.norm(v));
     const ok = list.includes(x);
-    if (ok) {
+    if(ok){
       this.sset(this.S.logged, "1");
       this.ensureThreads();
       return true;
@@ -51,26 +50,26 @@ const OIKOS = {
     return false;
   },
 
-  logout() {
+  logout(){
     try { sessionStorage.clear(); } catch {}
     window.location.href = "index.html";
   },
 
-  loadSessionFlags() {
+  loadSessionFlags(){
     this.mem.c01 = (this.sget(this.S.c01) === "1");
     this.mem.c02 = (this.sget(this.S.c02) === "1");
     this.mem.c03 = (this.sget(this.S.c03) === "1");
     this.mem.admin = (this.sget(this.S.admin) === "1");
   },
 
-  markUnlocked(type) {
+  markUnlocked(type){
     if (type === "c01") { this.mem.c01 = true; this.sset(this.S.c01, "1"); }
     if (type === "c02") { this.mem.c02 = true; this.sset(this.S.c02, "1"); }
     if (type === "c03") { this.mem.c03 = true; this.sset(this.S.c03, "1"); }
     if (type === "admin") { this.mem.admin = true; this.sset(this.S.admin, "1"); }
   },
 
-  checkCode(code, type) {
+  checkCode(code, type){
     const x = this.norm(code);
     const map = {
       c01: window.OIKOS_KEYS?.CODE_01 || [],
@@ -82,26 +81,23 @@ const OIKOS = {
     return list.includes(x);
   },
 
-  getAdminName() { return localStorage.getItem(this.S.adminName) || "ADMIN"; },
-  setAdminName(v) {
+  getAdminName(){ return localStorage.getItem(this.S.adminName) || "ADMIN"; },
+  setAdminName(v){
     const name = (v || "").toString().trim();
-    if (name) localStorage.setItem(this.S.adminName, name);
+    if(name) localStorage.setItem(this.S.adminName, name);
   },
 
-  getThreads() {
+  getThreads(){
     try { return JSON.parse(localStorage.getItem(this.S.threads)) || {}; }
     catch { return {}; }
   },
-
-  setThreads(t) { localStorage.setItem(this.S.threads, JSON.stringify(t)); },
-
-  ensureThreads() {
+  setThreads(t){ localStorage.setItem(this.S.threads, JSON.stringify(t)); },
+  ensureThreads(){
     const t = this.getThreads();
-    this.DEFAULT_THREADS.forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+    this.DEFAULT_THREADS.forEach(k => { if(!Array.isArray(t[k])) t[k] = []; });
     this.setThreads(t);
   },
-
-  pushMessage(who, name, text) {
+  pushMessage(who, name, text){
     const key = this.norm(who);
     const threads = this.getThreads();
     threads[key] = threads[key] || [];
@@ -110,11 +106,17 @@ const OIKOS = {
   }
 };
 
-function $(sel) { return document.querySelector(sel); }
-function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
+function $(sel){ return document.querySelector(sel); }
+function $all(sel){ return Array.from(document.querySelectorAll(sel)); }
+
+// ========= navegação admin (anti-cache) =========
+function goAdmin(){
+  // quebra cache do GitHub Pages
+  window.location.assign("./admin.html?v=" + Date.now());
+}
 
 // ========= Modal =========
-function setupCodeModal() {
+function setupCodeModal(){
   const modal = $("#codeModal");
   const modalTitle = $("#modalTitle");
   const modalMsg = $("#modalMsg");
@@ -131,7 +133,7 @@ function setupCodeModal() {
   let pendingAction = null;
   let requiredType = null;
 
-  function openModal(title, type, action) {
+  function openModal(title, type, action){
     pendingAction = typeof action === "function" ? action : null;
     requiredType = type || null;
 
@@ -143,11 +145,10 @@ function setupCodeModal() {
     setTimeout(() => modalCode.focus(), 30);
   }
 
-  function closeModal() {
+  function closeModal(){
     modal.style.display = "none";
     pendingAction = null;
     requiredType = null;
-
     if (modalMsg) modalMsg.textContent = "";
     modalCode.value = "";
   }
@@ -170,10 +171,11 @@ function setupCodeModal() {
 
     if (ok) {
       OIKOS.markUnlocked(requiredType);
+
       setTimeout(() => {
         closeModal();
         if (pendingAction) pendingAction();
-      }, 140);
+      }, 120);
     }
   });
 
@@ -181,7 +183,7 @@ function setupCodeModal() {
 }
 
 // ========= INDEX =========
-function initIndex() {
+function initIndex(){
   const form = $("#loginForm");
   if (!form) return;
 
@@ -192,12 +194,12 @@ function initIndex() {
 
     const msg = $("#loginMsg");
     if (msg) msg.textContent = ok ? "✓" : "×";
-    if (ok) setTimeout(() => window.location.href = "rede.html", 140);
+    if (ok) setTimeout(() => window.location.href = "rede.html", 120);
   });
 }
 
 // ========= REDE =========
-function initRede() {
+function initRede(){
   const root = $("#redeRoot");
   if (!root) return;
 
@@ -212,14 +214,13 @@ function initRede() {
 
   const { openModal } = setupCodeModal();
 
-  function showMensagensLocked() {
+  function showMensagensLocked(){
     if (lockMensagens) lockMensagens.style.display = "block";
     if (contentMensagens) contentMensagens.style.display = "none";
   }
-
-  function showMensagensUnlocked() {
+  function showMensagensUnlocked(){
     if (lockMensagens) lockMensagens.style.display = "none";
-    if (contentMensagens) {
+    if (contentMensagens){
       contentMensagens.style.display = "block";
       contentMensagens.style.pointerEvents = "auto";
       contentMensagens.style.opacity = "1";
@@ -229,10 +230,9 @@ function initRede() {
   if (OIKOS.mem.c01) showMensagensUnlocked();
   else showMensagensLocked();
 
-  function unlockMensagens() {
+  function unlockMensagens(){
     openModal("Requer Código 01 — Mensagens", "c01", () => showMensagensUnlocked());
   }
-
   lockMensagens?.addEventListener("click", unlockMensagens);
 
   tabArquivo?.addEventListener("click", (e) => {
@@ -256,7 +256,7 @@ function initRede() {
 
   let activeThread = null;
 
-  function renderThread(who, targetEl) {
+  function renderThread(who, targetEl){
     const key = OIKOS.norm(who);
     const threads = OIKOS.getThreads();
     const items = threads[key] || [];
@@ -291,7 +291,7 @@ function initRede() {
     targetEl.scrollTop = targetEl.scrollHeight;
   }
 
-  function setActiveThread(raw) {
+  function setActiveThread(raw){
     const t = OIKOS.norm(raw);
     activeThread = t;
 
@@ -317,27 +317,28 @@ function initRede() {
     if (msgLog) renderThread(activeThread, msgLog);
   });
 
-  // ✅ ADMIN: segurar no OIKOS -> validar -> ir para admin.html
+  // ========= ADMIN GATE =========
+  function askAdminThenGo(){
+    // se já validado nesta sessão, vai direto
+    if (OIKOS.mem.admin) return goAdmin();
+
+    openModal("Área reservada — ADMIN", "admin", () => {
+      goAdmin();
+    });
+  }
+
+  // 1) HOLD no OIKOS
   const logo = root.querySelector(".logo");
-  if (logo) {
+  if (logo){
     let holdTimer = null;
 
-    function startHold() {
+    function startHold(){
       clearTimeout(holdTimer);
       holdTimer = setTimeout(() => {
-        // se já está validado na sessão, vai direto
-        if (OIKOS.mem.admin) {
-          window.location.href = "admin.html";
-          return;
-        }
-        // senão pede código e depois vai
-        openModal("Área reservada — ADMIN", "admin", () => {
-          window.location.href = "admin.html";
-        });
+        askAdminThenGo();
       }, 2200);
     }
-
-    function cancelHold() {
+    function cancelHold(){
       clearTimeout(holdTimer);
       holdTimer = null;
     }
@@ -346,16 +347,38 @@ function initRede() {
     logo.addEventListener("mouseup", cancelHold);
     logo.addEventListener("mouseleave", cancelHold);
 
-    logo.addEventListener("touchstart", startHold, { passive: true });
+    logo.addEventListener("touchstart", startHold, { passive:true });
     logo.addEventListener("touchend", cancelHold);
     logo.addEventListener("touchcancel", cancelHold);
+
+    // 2) Fallback: 3 duplos-cliques em 3.5s
+    let dblCount = 0;
+    let dblTimer = null;
+
+    logo.addEventListener("dblclick", () => {
+      dblCount++;
+      clearTimeout(dblTimer);
+      dblTimer = setTimeout(() => { dblCount = 0; }, 3500);
+      if (dblCount >= 3){
+        dblCount = 0;
+        askAdminThenGo();
+      }
+    });
   }
+
+  // 3) Backup teclado
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
+      e.preventDefault();
+      askAdminThenGo();
+    }
+  });
 
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
 
 // ========= ADMIN PAGE =========
-function initAdminPage() {
+function initAdminPage(){
   const root = $("#adminRoot");
   if (!root) return;
 
@@ -367,35 +390,25 @@ function initAdminPage() {
   const content = $("#contentAdminPage");
   const { openModal } = setupCodeModal();
 
-  function lockUI(){
-    if (lock) lock.style.display = "block";
-    if (content) content.style.display = "none";
-  }
-  function unlockUI(){
-    if (lock) lock.style.display = "none";
-    if (content) content.style.display = "block";
-  }
+  function lockUI(){ if(lock) lock.style.display="block"; if(content) content.style.display="none"; }
+  function unlockUI(){ if(lock) lock.style.display="none"; if(content) content.style.display="block"; }
 
-  // gate
   if (OIKOS.mem.admin) unlockUI();
   else {
     lockUI();
     openModal("Área reservada — ADMIN", "admin", () => unlockUI());
   }
 
-  lock?.addEventListener("click", () =>
-    openModal("Área reservada — ADMIN", "admin", () => unlockUI())
-  );
+  lock?.addEventListener("click", () => openModal("Área reservada — ADMIN", "admin", () => unlockUI()));
 
-  // render admin
+  // ADMIN UI
   let adminActive = null;
 
-  function renderThread(who, targetEl) {
+  function renderThread(who, targetEl){
     const key = OIKOS.norm(who);
     const threads = OIKOS.getThreads();
     const items = threads[key] || [];
     targetEl.innerHTML = "";
-
     items.forEach((m) => {
       const wrap = document.createElement("div");
       wrap.style.border = "1px solid rgba(120,255,214,.14)";
@@ -419,13 +432,11 @@ function initAdminPage() {
       wrap.appendChild(text);
       targetEl.appendChild(wrap);
     });
-
     targetEl.scrollTop = targetEl.scrollHeight;
   }
 
-  function renderAdmin() {
+  function renderAdmin(){
     if (!OIKOS.mem.admin) return;
-
     const box = $("#adminThreads");
     const adminLog = $("#adminLog");
     const adminTitle = $("#adminTitle");
@@ -438,7 +449,6 @@ function initAdminPage() {
     const allKeys = Array.from(new Set([...OIKOS.DEFAULT_THREADS, ...Object.keys(threads)]));
 
     box.innerHTML = "";
-
     allKeys.forEach((k) => {
       const key = OIKOS.norm(k);
       const card = document.createElement("div");
@@ -459,18 +469,15 @@ function initAdminPage() {
     if (!OIKOS.mem.admin) return;
     if (!adminActive) return;
 
-    const nameInput = $("#adminName");
-    const inp = $("#adminInput");
-
-    const chosen = (nameInput?.value || "").trim();
-    const text = (inp?.value || "").trim();
+    const chosen = ($("#adminName")?.value || "").trim();
+    const text = ($("#adminInput")?.value || "").trim();
 
     if (chosen) OIKOS.setAdminName(chosen);
-
     const finalName = chosen || OIKOS.getAdminName();
     if (!text) return;
 
     OIKOS.pushMessage(adminActive, finalName, text);
+    const inp = $("#adminInput");
     if (inp) inp.value = "";
 
     renderAdmin();
@@ -478,10 +485,8 @@ function initAdminPage() {
     if (adminLog) renderThread(adminActive, adminLog);
   });
 
-  // render após desbloqueio
-  setTimeout(() => {
-    if (OIKOS.mem.admin) renderAdmin();
-  }, 50);
+  // render inicial
+  setTimeout(() => { if (OIKOS.mem.admin) renderAdmin(); }, 60);
 
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
