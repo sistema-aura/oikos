@@ -494,13 +494,4 @@ body.net{
   z-index: 1;
 }
 
-/* FORÇA SCROLL VERTICAL */
-html, body {
-  height: auto !important;
-  overflow-y: auto !important;
-}
 
-body.net {
-  min-height: 100vh;
-  overflow-y: auto !important;
-}
