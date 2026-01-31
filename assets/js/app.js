@@ -42,11 +42,13 @@ const OIKOS = {
       .replace(/\s+/g, " ");
   },
 
+  // 🔧 resolve "Ice" vs "ice"
   resolveKey(obj, rawKey) {
     if (!obj) return rawKey;
     if (Object.prototype.hasOwnProperty.call(obj, rawKey)) return rawKey;
     const target = this.norm(rawKey);
-    return Object.keys(obj).find(k => this.norm(k) === target) || rawKey;
+    const found = Object.keys(obj).find(k => this.norm(k) === target);
+    return found || rawKey;
   },
 
   // ===== session helpers =====
@@ -219,7 +221,7 @@ function setupCodeModal() {
   return { openModal, closeModal };
 }
 
-// ========= RESET =========
+// ========= RESET secreto =========
 function bindSecretReset() {
   document.addEventListener("keydown", e => {
     if (e.ctrlKey && e.shiftKey && (e.key === "R" || e.key === "r")) {
@@ -238,9 +240,9 @@ function initIndex() {
 
   form.addEventListener("submit", e => {
     e.preventDefault();
-    if (OIKOS.login($("#senha")?.value)) {
-      setTimeout(() => location.href = "rede.html", 180);
-    }
+    const pass = $("#senha")?.value || "";
+    const ok = OIKOS.login(pass);
+    if (ok) setTimeout(() => location.href = "rede.html", 180);
   });
 }
 
