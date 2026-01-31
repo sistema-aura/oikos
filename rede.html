@@ -4,14 +4,64 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OIKOS — Rede</title>
+
   <link rel="stylesheet" href="assets/css/style.css" />
 
-  <!-- FIX: canvas não rouba cliques + HUD sempre por cima -->
+  <!-- FIX DEFINITIVO DE LAYOUT / FLEX / SCROLL -->
   <style>
-    #netCanvas { pointer-events: none !important; }
-    .hud, .panel { position: relative; z-index: 2; }
-    .hud-top { z-index: 3; }
-    .logo { pointer-events: auto; user-select: none; }
+    /* canvas nunca apanha cliques */
+    #netCanvas {
+      pointer-events: none !important;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* HUD sempre acima do canvas */
+    .hud {
+      position: relative;
+      z-index: 2;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* painel topo */
+    .hud-top {
+      flex: 0 0 auto;
+      z-index: 3;
+    }
+
+    /* painel esquerdo (tabs + conteúdo) */
+    .hud-left {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0; /* CRÍTICO */
+    }
+
+    /* tabs nunca empurram o conteúdo para fora */
+    .tabs2 {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* views ocupam o resto do espaço e fazem scroll */
+    .view {
+      flex: 1 1 auto;
+      min-height: 0; /* CRÍTICO */
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* logo pode ser segurado (admin secreto) */
+    .logo {
+      user-select: none;
+      pointer-events: auto;
+      cursor: default;
+    }
   </style>
 </head>
 
@@ -21,23 +71,27 @@
   <!-- HUD -->
   <div class="hud" id="redeRoot">
 
-    <!-- Top bar -->
+    <!-- TOPO -->
     <div class="panel hud-top">
       <div class="hud-brand">
         <div class="logo">OIKOS</div>
-        <div class="status">Comunicação direta comprometida. Usa apenas se necessário.</div>
+        <div class="status">
+          Comunicação direta comprometida. Usa apenas se necessário.
+        </div>
       </div>
       <div class="hud-actions">
         <button class="btn" id="btnLogout" type="button">SAIR</button>
       </div>
     </div>
 
-    <!-- Workspace -->
+    <!-- CORPO -->
     <div class="panel hud-left">
 
-      <!-- TABS (tudo aqui dentro) -->
+      <!-- TABS -->
       <div class="tabs2">
-        <button class="tab2 active" data-tab="mensagens" type="button">MENSAGENS</button>
+        <button class="tab2 active" data-tab="mensagens" type="button">
+          MENSAGENS
+        </button>
 
         <a class="tab2" href="arquivos.html" id="tabArquivo"
            style="text-decoration:none; display:inline-flex; align-items:center;">
@@ -69,16 +123,18 @@
           CANAL NÃO AUTORIZADO
         </a>
       </div>
-      <!-- /TABS -->
 
-      <!-- Mensagens -->
+      <!-- ================= MENSAGENS ================= -->
       <div class="view" data-panel="mensagens">
+
         <button id="lockMensagens" class="lockbox2" type="button">
           🔒 ACESSO BLOQUEADO<br/>
           Requer Código 01.
         </button>
 
-        <div id="contentMensagens" style="display:none; pointer-events:none; opacity:.35;">
+        <div id="contentMensagens"
+             style="display:none; pointer-events:none; opacity:.35;">
+
           <div class="msgGrid">
             <div class="msgList">
               <button class="msgBtn" data-msg="gabriel" type="button">Gabriel</button>
@@ -88,14 +144,28 @@
 
             <div class="msgView">
               <p class="msgTitle" id="msgTitle">Selecione um contacto.</p>
-              <div id="msgLog" style="display:flex; flex-direction:column; gap:8px; margin:10px 0;"></div>
 
-              <form id="msgForm" style="display:flex; gap:10px; margin-top:auto;">
-                <input id="msgInput" type="text" placeholder="escreve…" autocomplete="off"
-                  style="flex:1; min-width:0; padding:10px 12px; border-radius:12px;
-                        border:1px solid rgba(120,255,214,.18);
-                        background: rgba(0,0,0,.45); color: rgba(232,237,246,.92);
-                        font-family: var(--mono); outline:none;">
+              <div id="msgLog"
+                   style="display:flex; flex-direction:column; gap:8px; margin:10px 0;">
+              </div>
+
+              <form id="msgForm"
+                    style="display:flex; gap:10px; margin-top:auto;">
+                <input id="msgInput"
+                       type="text"
+                       placeholder="escreve…"
+                       autocomplete="off"
+                       style="
+                         flex:1;
+                         min-width:0;
+                         padding:10px 12px;
+                         border-radius:12px;
+                         border:1px solid rgba(120,255,214,.18);
+                         background: rgba(0,0,0,.45);
+                         color: rgba(232,237,246,.92);
+                         font-family: var(--mono);
+                         outline:none;
+                       ">
                 <button class="btn" type="submit">ENVIAR</button>
               </form>
             </div>
@@ -103,9 +173,11 @@
         </div>
       </div>
 
-      <!-- ADMIN (SEM TAB VISÍVEL) -->
+      <!-- ================= ADMIN ================= -->
       <div class="view" data-panel="admin" style="display:none;">
-        <div class="lockbox2" style="border-color: rgba(120,255,214,.25); color: rgba(120,255,214,.9);">
+        <div class="lockbox2"
+             style="border-color: rgba(120,255,214,.25);
+                    color: rgba(120,255,214,.9);">
           Área reservada. Logs e respostas.
         </div>
 
@@ -115,21 +187,46 @@
         </div>
 
         <div style="margin-top:12px;">
-          <p class="msgTitle" id="adminTitle">Seleciona uma conversa.</p>
-          <div id="adminLog" style="display:flex; flex-direction:column; gap:8px; margin:10px 0;"></div>
+          <p class="msgTitle" id="adminTitle">
+            Seleciona uma conversa.
+          </p>
 
-          <form id="adminForm" style="display:flex; gap:10px; flex-wrap:wrap;">
-            <input id="adminName" type="text" placeholder="assinatura (ex: Gabriel)" autocomplete="off"
-              style="width:220px; padding:10px 12px; border-radius:12px;
-                    border:1px solid rgba(120,255,214,.18);
-                    background: rgba(0,0,0,.45); color: rgba(232,237,246,.92);
-                    font-family: var(--mono); outline:none;">
+          <div id="adminLog"
+               style="display:flex; flex-direction:column; gap:8px; margin:10px 0;">
+          </div>
 
-            <input id="adminInput" type="text" placeholder="responder…" autocomplete="off"
-              style="flex:1; min-width:220px; padding:10px 12px; border-radius:12px;
-                    border:1px solid rgba(120,255,214,.18);
-                    background: rgba(0,0,0,.45); color: rgba(232,237,246,.92);
-                    font-family: var(--mono); outline:none;">
+          <form id="adminForm"
+                style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input id="adminName"
+                   type="text"
+                   placeholder="assinatura (ex: Gabriel)"
+                   autocomplete="off"
+                   style="
+                     width:220px;
+                     padding:10px 12px;
+                     border-radius:12px;
+                     border:1px solid rgba(120,255,214,.18);
+                     background: rgba(0,0,0,.45);
+                     color: rgba(232,237,246,.92);
+                     font-family: var(--mono);
+                     outline:none;
+                   ">
+
+            <input id="adminInput"
+                   type="text"
+                   placeholder="responder…"
+                   autocomplete="off"
+                   style="
+                     flex:1;
+                     min-width:220px;
+                     padding:10px 12px;
+                     border-radius:12px;
+                     border:1px solid rgba(120,255,214,.18);
+                     background: rgba(0,0,0,.45);
+                     color: rgba(232,237,246,.92);
+                     font-family: var(--mono);
+                     outline:none;
+                   ">
             <button class="btn" type="submit">RESPONDER</button>
           </form>
         </div>
@@ -147,7 +244,10 @@
       </div>
 
       <form id="modalForm" class="modalRow">
-        <input id="modalCode" type="text" placeholder="padrão / data / associação" autocomplete="off" />
+        <input id="modalCode"
+               type="text"
+               placeholder="padrão / data / associação"
+               autocomplete="off" />
         <button class="btn" type="submit">VALIDAR</button>
       </form>
 
@@ -155,15 +255,9 @@
     </div>
   </div>
 
-  <!-- Ordem correta -->
+  <!-- ORDEM CERTA -->
   <script src="assets/js/keys.js"></script>
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
-
-  <!-- reforço -->
-  <script>
-    const c = document.getElementById("netCanvas");
-    if (c) c.style.pointerEvents = "none";
-  </script>
 </body>
 </html>
