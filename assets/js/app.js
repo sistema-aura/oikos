@@ -1,9 +1,9 @@
 // ================================
-// OIKOS — app.js (COMPLETO E ESTÁVEL)
+// OIKOS — app.js (ESTÁVEL)
 // LOGIN: 1x por sessão (sessionStorage)
 // CÓDIGOS 01/02/03/ADMIN: 1x por sessão (sessionStorage)
 // MENSAGENS: persistem (localStorage)
-// ADMIN: segredo no logo "OIKOS" -> segurar 2.2s (PC + mobile)
+// ADMIN: segurar no "OIKOS" 2.2s
 // ================================
 
 const OIKOS = {
@@ -117,6 +117,18 @@ const OIKOS = {
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
 
+// ========= Painéis robustos =========
+function showPanel(name) {
+  const panels = $all("[data-panel]");
+  panels.forEach(p => {
+    p.style.display = (p.dataset.panel === name) ? "flex" : "none";
+  });
+
+  // tabs: só existe "mensagens" (não dependemos disto para o layout)
+  const tabs = $all("[data-tab]");
+  tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+}
+
 // ========= Modal =========
 function setupCodeModal() {
   const modal = $("#codeModal");
@@ -139,8 +151,8 @@ function setupCodeModal() {
     pendingAction = typeof action === "function" ? action : null;
     requiredType = type || null;
 
-    modalTitle.textContent = title || "Inserir código";
-    modalMsg.textContent = "";
+    if (modalTitle) modalTitle.textContent = title || "Inserir código";
+    if (modalMsg) modalMsg.textContent = "";
     modalCode.value = "";
 
     modal.style.display = "flex";
@@ -151,7 +163,7 @@ function setupCodeModal() {
     modal.style.display = "none";
     pendingAction = null;
     requiredType = null;
-    modalMsg.textContent = "";
+    if (modalMsg) modalMsg.textContent = "";
     modalCode.value = "";
   }
 
@@ -162,14 +174,14 @@ function setupCodeModal() {
     e.preventDefault();
 
     if (!window.OIKOS_KEYS) {
-      modalMsg.textContent = "× keys.js não carregado";
+      if (modalMsg) modalMsg.textContent = "× keys.js não carregado";
       return;
     }
 
     const val = modalCode.value || "";
     const ok = requiredType ? OIKOS.checkCode(val, requiredType) : false;
 
-    modalMsg.textContent = ok ? "✓ padrão reconhecido" : "× padrão não reconhecido";
+    if (modalMsg) modalMsg.textContent = ok ? "✓ padrão reconhecido" : "× padrão não reconhecido";
 
     if (ok) {
       OIKOS.markUnlocked(requiredType);
@@ -177,23 +189,11 @@ function setupCodeModal() {
       setTimeout(() => {
         closeModal();
         if (pendingAction) pendingAction();
-      }, 180);
+      }, 120);
     }
   });
 
   return { openModal, closeModal };
-}
-
-// ========= RESET secreto =========
-function bindSecretReset() {
-  document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.shiftKey && (e.key === "R" || e.key === "r")) {
-      e.preventDefault();
-      localStorage.clear();
-      try { sessionStorage.clear(); } catch {}
-      location.reload();
-    }
-  });
 }
 
 // ========= INDEX =========
@@ -208,7 +208,7 @@ function initIndex() {
 
     const msg = $("#loginMsg");
     if (msg) msg.textContent = ok ? "✓" : "×";
-    if (ok) setTimeout(() => window.location.href = "rede.html", 180);
+    if (ok) setTimeout(() => window.location.href = "rede.html", 120);
   });
 }
 
@@ -220,23 +220,13 @@ function initRede() {
   OIKOS.requireLogin();
   OIKOS.ensureThreads();
   OIKOS.loadSessionFlags();
-  bindSecretReset();
-
-  const tabs = $all("[data-tab]");
-  const panels = $all("[data-panel]");
 
   const lockMensagens = $("#lockMensagens");
   const contentMensagens = $("#contentMensagens");
-
   const tabArquivo = $("#tabArquivo");
   const tabNaoVoltei = $("#tabNaoVoltei");
 
   const { openModal } = setupCodeModal();
-
-  function setPanel(name) {
-    panels.forEach(p => p.style.display = (p.dataset.panel === name ? "flex" : "none"));
-    tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-  }
 
   function showMensagensLocked() {
     if (lockMensagens) lockMensagens.style.display = "block";
@@ -256,29 +246,20 @@ function initRede() {
     }
   }
 
-  // default
-  setPanel("mensagens");
+  // painel inicial
+  showPanel("mensagens");
   if (OIKOS.mem.c01) showMensagensUnlocked();
   else showMensagensLocked();
 
   function unlockMensagens() {
     openModal("Requer Código 01 — Mensagens", "c01", () => {
       showMensagensUnlocked();
-      setPanel("mensagens");
+      showPanel("mensagens");
     });
   }
 
-  tabs.forEach(t => t.addEventListener("click", () => {
-    if (t.dataset.tab === "mensagens") {
-      if (!OIKOS.mem.c01) return unlockMensagens();
-      setPanel("mensagens");
-      showMensagensUnlocked();
-    }
-  }));
-
   lockMensagens?.addEventListener("click", unlockMensagens);
 
-  // ARQUIVO / NAO VOLTEI
   tabArquivo?.addEventListener("click", (e) => {
     e.preventDefault();
     if (OIKOS.mem.c02) return window.location.href = "arquivos.html";
@@ -419,39 +400,37 @@ function initRede() {
     if (adminLog) renderThread(adminActive, adminLog);
   });
 
+  function enterAdmin() {
+    showPanel("admin");
+    renderAdmin();
+  }
+
   function openAdminGate() {
     openModal("Área reservada — ADMIN", "admin", () => {
-      setPanel("admin");
-      renderAdmin();
+      enterAdmin();
     });
   }
 
-  // ✅ ADMIN secreto (PC + mobile): segurar no "OIKOS" 2.2s
+  // ✅ ADMIN secreto: segurar no "OIKOS" por 2.2s (PC + mobile)
   const logo = root.querySelector(".logo");
   if (logo) {
     let holdTimer = null;
-    let cooldownUntil = 0;
 
     function startHold() {
-      if (Date.now() < cooldownUntil) return;
       clearTimeout(holdTimer);
       holdTimer = setTimeout(() => {
-        cooldownUntil = Date.now() + 4000;
         openAdminGate();
       }, 2200);
     }
-
     function cancelHold() {
       clearTimeout(holdTimer);
       holdTimer = null;
     }
 
-    // mouse
     logo.addEventListener("mousedown", startHold);
     logo.addEventListener("mouseup", cancelHold);
     logo.addEventListener("mouseleave", cancelHold);
 
-    // touch
     logo.addEventListener("touchstart", startHold, { passive: true });
     logo.addEventListener("touchend", cancelHold);
     logo.addEventListener("touchcancel", cancelHold);
@@ -460,69 +439,9 @@ function initRede() {
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
 
-// ========= ARQUIVO (gate simples, se a página tiver os IDs) =========
-function initArquivos() {
-  const root = $("#arquivoRoot");
-  if (!root) return;
-
-  OIKOS.requireLogin();
-  OIKOS.loadSessionFlags();
-  bindSecretReset();
-
-  const lock = $("#lockArquivoPage");
-  const content = $("#contentArquivoPage");
-  const { openModal } = setupCodeModal();
-
-  function lockUI() {
-    if (lock) lock.style.display = "block";
-    if (content) content.style.display = "none";
-  }
-  function unlockUI() {
-    if (lock) lock.style.display = "none";
-    if (content) content.style.display = "block";
-  }
-
-  if (OIKOS.mem.c02) unlockUI();
-  else {
-    lockUI();
-    openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI());
-  }
-
-  lock?.addEventListener("click", () => openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI()));
-  $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
-}
-
-// ========= SE EU NÃO VOLTAR (gate simples) =========
-function initNaoVoltei() {
-  const root = $("#naoVolteiRoot");
-  if (!root) return;
-
-  OIKOS.requireLogin();
-  OIKOS.loadSessionFlags();
-  bindSecretReset();
-
-  const lock = $("#lockNaoVolteiPage");
-  const content = $("#contentNaoVolteiPage");
-  const { openModal } = setupCodeModal();
-
-  function lockUI() {
-    if (lock) lock.style.display = "block";
-    if (content) content.style.display = "none";
-  }
-  function unlockUI() {
-    if (lock) lock.style.display = "none";
-    if (content) content.style.display = "block";
-  }
-
-  if (OIKOS.mem.c03) unlockUI();
-  else {
-    lockUI();
-    openModal("Requer Código 03 — Se eu não voltar", "c03", () => unlockUI());
-  }
-
-  lock?.addEventListener("click", () => openModal("Requer Código 03 — Se eu não voltar", "c03", () => unlockUI()));
-  $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
-}
+// ========= ARQUIVO / NAO VOLTEI (mantidos simples) =========
+function initArquivos() {}
+function initNaoVoltei() {}
 
 // ========= AUTO INIT =========
 document.addEventListener("DOMContentLoaded", () => {
