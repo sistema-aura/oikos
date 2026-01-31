@@ -4,16 +4,19 @@
 // CÓDIGOS 01/02/03/ADMIN: 1x por sessão (sessionStorage)
 // ARQUIVO: Código 02 + Sub-códigos por pasta/ficheiro (sessão)
 // MENSAGENS: persistem (localStorage)
+// ADMIN: gatilho secreto no logo "OIKOS" (hold 1.6s + duplo clique)
 // ================================
 
 const OIKOS = {
   S: {
+    // sessão
     logged: "oikos_logged_session",
     c01: "oikos_c01_session",
     c02: "oikos_c02_session",
     c03: "oikos_c03_session",
     admin: "oikos_admin_session",
 
+    // persistente
     threads: "oikos_threads",
     adminName: "oikos_admin_name"
   },
@@ -26,8 +29,10 @@ const OIKOS = {
     c02: false,
     c03: false,
     admin: false,
-    archiveFolders: {},
-    archiveFiles: {}
+
+    // sub-acessos (sessão)
+    archiveFolders: {}, // { Ice:true, ... }
+    archiveFiles: {}    // { "Ice/relatorio.pdf":true, ... }
   },
 
   norm(v) {
@@ -38,9 +43,11 @@ const OIKOS = {
       .replace(/\s+/g, " ");
   },
 
+  // ===== session helpers =====
   sget(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
   sset(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
 
+  // ===== Login =====
   isLogged() { return this.sget(this.S.logged) === "1"; },
 
   requireLogin() {
@@ -51,7 +58,6 @@ const OIKOS = {
     const x = this.norm(pass);
     const list = (window.OIKOS_KEYS?.LOGIN || []).map(v => this.norm(v));
     const ok = list.includes(x);
-
     if (ok) {
       this.sset(this.S.logged, "1");
       this.ensureThreads();
@@ -79,6 +85,7 @@ const OIKOS = {
     if (type === "admin") { this.mem.admin = true; this.sset(this.S.admin, "1"); }
   },
 
+  // ===== Codes =====
   checkCode(code, type, target = null) {
     const x = this.norm(code);
 
@@ -106,29 +113,24 @@ const OIKOS = {
     return list.includes(x);
   },
 
+  // ===== Admin name =====
   getAdminName() { return localStorage.getItem(this.S.adminName) || "ADMIN"; },
   setAdminName(v) {
     const name = (v || "").toString().trim();
     if (name) localStorage.setItem(this.S.adminName, name);
   },
 
+  // ===== Threads =====
   getThreads() {
     try { return JSON.parse(localStorage.getItem(this.S.threads)) || {}; }
     catch { return {}; }
   },
-
-  setThreads(t) {
-    localStorage.setItem(this.S.threads, JSON.stringify(t));
-  },
-
+  setThreads(t) { localStorage.setItem(this.S.threads, JSON.stringify(t)); },
   ensureThreads() {
     const t = this.getThreads();
-    this.DEFAULT_THREADS.forEach(k => {
-      if (!Array.isArray(t[k])) t[k] = [];
-    });
+    this.DEFAULT_THREADS.forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
     this.setThreads(t);
   },
-
   pushMessage(who, name, text) {
     const key = this.norm(who);
     const threads = this.getThreads();
@@ -137,10 +139,12 @@ const OIKOS = {
     this.setThreads(threads);
   },
 
+  // ===== Arquivo session access =====
   hasFolderAccess(folder) { return !!this.mem.archiveFolders[(folder || "").toString()]; },
   hasFileAccess(filePath) { return !!this.mem.archiveFiles[(filePath || "").toString()]; }
 };
 
+// Helpers
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
 
@@ -160,8 +164,8 @@ function setupCodeModal() {
   modal.style.display = "none";
 
   let pendingAction = null;
-  let requiredType = null;
-  let requiredTarget = null;
+  let requiredType = null;     // c01|c02|c03|admin|archiveFolder|archiveFile|c04
+  let requiredTarget = null;   // pasta ou "Pasta/ficheiro.ext"
   let onClose = null;
 
   function openModal(title, type, action, opts = {}) {
@@ -208,10 +212,12 @@ function setupCodeModal() {
     if (modalMsg) modalMsg.textContent = ok ? "✓ padrão reconhecido" : "× padrão não reconhecido";
 
     if (ok) {
+      // principais -> guardam sessão
       if (requiredType === "c01" || requiredType === "c02" || requiredType === "c03" || requiredType === "admin") {
         OIKOS.markUnlocked(requiredType);
       }
 
+      // subpastas / subficheiros -> sessão também
       if (requiredType === "archiveFolder" && requiredTarget) {
         OIKOS.mem.archiveFolders[requiredTarget] = true;
       }
@@ -238,7 +244,7 @@ function bindSecretReset() {
       try { sessionStorage.clear(); } catch {}
       location.reload();
     }
-  }, true);
+  });
 }
 
 // ========= INDEX =========
@@ -335,8 +341,14 @@ function initRede() {
     openModal("Requer Código 03 — Se eu não voltar", "c03", () => window.location.href = "nao-voltei.html");
   });
 
-  // ========= ADMIN =========
-  let adminActive = null;
+  // ========= CHAT =========
+  const msgBtns = $all(".msgBtn");
+  const msgTitle = $("#msgTitle");
+  const msgLog = $("#msgLog");
+  const msgForm = $("#msgForm");
+  const msgInput = $("#msgInput");
+
+  let activeThread = null;
 
   function renderThread(who, targetEl) {
     const key = OIKOS.norm(who);
@@ -372,6 +384,35 @@ function initRede() {
 
     targetEl.scrollTop = targetEl.scrollHeight;
   }
+
+  function setActiveThread(raw) {
+    const t = OIKOS.norm(raw);
+    activeThread = t;
+
+    msgBtns.forEach(x => x.classList.toggle("active", OIKOS.norm(x.dataset.msg) === t));
+    if (msgTitle) msgTitle.textContent = t.toUpperCase();
+    if (msgLog) renderThread(t, msgLog);
+    msgInput?.focus();
+  }
+
+  msgBtns.forEach(b => b.addEventListener("click", () => setActiveThread(b.dataset.msg)));
+  if (msgBtns.length) setActiveThread(msgBtns[0].dataset.msg || "gabriel");
+
+  msgForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!activeThread) return;
+    if (!OIKOS.mem.c01) return unlockMensagens();
+
+    const text = (msgInput?.value || "").trim();
+    if (!text) return;
+
+    OIKOS.pushMessage(activeThread, OIKOS.USER_NAME, text);
+    msgInput.value = "";
+    if (msgLog) renderThread(activeThread, msgLog);
+  });
+
+  // ========= ADMIN =========
+  let adminActive = null;
 
   function renderAdmin() {
     if (!OIKOS.mem.admin) return;
@@ -425,8 +466,7 @@ function initRede() {
     if (inp) inp.value = "";
 
     renderAdmin();
-    const adminLog = $("#adminLog");
-    if (adminLog) renderThread(adminActive, adminLog);
+    if ($("#adminLog")) renderThread(adminActive, $("#adminLog"));
   });
 
   function openAdminGate() {
@@ -436,57 +476,98 @@ function initRede() {
     });
   }
 
-  // ✅ ATALHOS MAIS COMPATÍVEIS: usa e.code (KeyA), não e.key
-  // E usa capture=true para ninguém “comer” o evento antes
-  document.addEventListener("keydown", (e) => {
-    const code = e.code; // "KeyA"
-    const isA = (code === "KeyA");
-    const isBackup = (code === "Digit1"); // Ctrl+Shift+1 backup
-
-    if (e.ctrlKey && e.shiftKey && isA) {
-      e.preventDefault();
-      openAdminGate();
-    }
-
-    if (e.ctrlKey && e.altKey && isA) {
-      e.preventDefault();
-      openAdminGate();
-    }
-
-    if (e.ctrlKey && e.shiftKey && isBackup) {
-      e.preventDefault();
-      openAdminGate();
-    }
-  }, true);
-
-  // ✅ BACKUP IMPOSSÍVEL DE FALHAR: clique 7x no logo OIKOS
+  // ✅ BOTÃO SECRETO NO LOGO "OIKOS" (anti-acidente)
+  // Sequência: segurar 1.6s -> soltar -> duplo clique em até 0.8s
   const logo = root.querySelector(".logo");
   if (logo) {
-    let clicks = 0;
-    let timer = null;
+    logo.style.userSelect = "none";
+    logo.style.cursor = "default";
 
-    logo.style.cursor = "pointer";
+    let holdTimer = null;
+    let armed = false;
+    let lastArmAt = 0;
+    let dblClicks = 0;
+    let dblTimer = null;
+    let cooldownUntil = 0;
 
+    function armSecret() {
+      armed = true;
+      lastArmAt = Date.now();
+      dblClicks = 0;
+
+      if (dblTimer) clearTimeout(dblTimer);
+      dblTimer = setTimeout(() => {
+        armed = false;
+        dblClicks = 0;
+      }, 800);
+    }
+
+    function triggerSecret() {
+      const now = Date.now();
+      if (now < cooldownUntil) return;
+      cooldownUntil = now + 4000;
+
+      armed = false;
+      dblClicks = 0;
+      if (dblTimer) clearTimeout(dblTimer);
+
+      openAdminGate();
+    }
+
+    // PC: mouse
+    logo.addEventListener("mousedown", () => {
+      if (Date.now() < cooldownUntil) return;
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        armSecret();
+      }, 1600);
+    });
+
+    logo.addEventListener("mouseup", () => {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = null;
+    });
+
+    logo.addEventListener("mouseleave", () => {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = null;
+    });
+
+    logo.addEventListener("dblclick", (e) => {
+      if (!armed) return;
+      if (Date.now() - lastArmAt > 800) return;
+      e.preventDefault();
+      triggerSecret();
+    });
+
+    // Mobile: touch
+    logo.addEventListener("touchstart", () => {
+      if (Date.now() < cooldownUntil) return;
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        armSecret();
+      }, 1600);
+    }, { passive: true });
+
+    logo.addEventListener("touchend", () => {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = null;
+    });
+
+    // Mobile fallback: dois taps rápidos após armar
     logo.addEventListener("click", () => {
-      clicks += 1;
+      if (!armed) return;
+      if (Date.now() - lastArmAt > 800) return;
 
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { clicks = 0; }, 900); // janela curta
-
-      if (clicks >= 7) {
-        clicks = 0;
-        openAdminGate();
-      }
+      dblClicks += 1;
+      if (dblClicks >= 2) triggerSecret();
     });
   }
-
-  // (Opcional) botão admin visível — se quiseres, cria em HTML e descomenta:
-  // document.getElementById("btnAdmin")?.addEventListener("click", openAdminGate);
 
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
 
-// ========= ARQUIVO =========
+// ========= ARQUIVO (subpastas a funcionar) =========
 function initArquivos() {
   const root = $("#arquivoRoot");
   if (!root) return;
@@ -497,6 +578,7 @@ function initArquivos() {
 
   const lock = $("#lockArquivoPage");
   const content = $("#contentArquivoPage");
+
   const { openModal } = setupCodeModal();
 
   function lockUI() {
@@ -508,6 +590,7 @@ function initArquivos() {
     if (content) content.style.display = "block";
   }
 
+  // Gate principal: Código 02
   if (OIKOS.mem.c02) unlockUI();
   else {
     lockUI();
@@ -516,6 +599,136 @@ function initArquivos() {
   lock?.addEventListener("click", () => openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI()));
 
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
+
+  // ===== Subpastas + viewer (usa IDs do teu arquivos.html) =====
+  const folderList = $("#folderList");
+  const filePath = $("#filePath");
+  const btnOpen = $("#btnOpenFile");
+
+  if (!folderList || !filePath || !btnOpen) return;
+
+  const viewerTitle = $("#viewerTitle");
+  const viewerBox = $("#viewerBox");
+  const pdfFrame = $("#pdfFrame");
+  const imgView = $("#imgView");
+  const viewerError = $("#viewerError");
+  const openNewTab = $("#openNewTab");
+  const closeViewer = $("#closeViewer");
+
+  function safePath(v) {
+    const s = (v || "").toString().trim().replace(/\\/g, "/");
+    if (!s) return "";
+    if (s.includes("..")) return "";
+    return s.replace(/^\/+/, "");
+  }
+  function extOf(path) {
+    const m = (path || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+    return m ? m[1] : "";
+  }
+
+  function resetViewer() {
+    if (!viewerBox) return;
+    viewerBox.style.display = "none";
+    if (pdfFrame) { pdfFrame.style.display = "none"; pdfFrame.removeAttribute("src"); }
+    if (imgView) { imgView.style.display = "none"; imgView.removeAttribute("src"); }
+    if (viewerError) { viewerError.style.display = "none"; viewerError.textContent = ""; }
+    if (openNewTab) { openNewTab.style.display = "none"; openNewTab.href = "#"; }
+    if (closeViewer) { closeViewer.style.display = "none"; }
+    if (viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO";
+  }
+
+  function showError(msg) {
+    if (!viewerBox) return;
+    viewerBox.style.display = "block";
+    if (pdfFrame) pdfFrame.style.display = "none";
+    if (imgView) imgView.style.display = "none";
+    if (viewerError) {
+      viewerError.style.display = "block";
+      viewerError.textContent = msg || "Não foi possível abrir.";
+    }
+    if (openNewTab) openNewTab.style.display = "none";
+    if (closeViewer) closeViewer.style.display = "inline-flex";
+  }
+
+  function requireFolder(folder, cb) {
+    if (OIKOS.hasFolderAccess(folder)) return cb();
+    openModal("Requer sub-código — " + folder, "archiveFolder", cb, { target: folder });
+  }
+
+  function requireFile(fileKey, cb) {
+    const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
+    if (!fileMap[fileKey]) return cb(); // sem código próprio
+    if (OIKOS.hasFileAccess(fileKey)) return cb();
+    openModal("Requer sub-código — Documento", "archiveFile", cb, { target: fileKey });
+  }
+
+  function openFile() {
+    const raw = safePath(filePath.value);
+    if (!raw) return showError("Caminho inválido.");
+
+    const folder = raw.split("/")[0] || "";
+    if (!folder) return showError("Indica a pasta primeiro (ex: Ice/ficheiro.png).");
+
+    requireFolder(folder, () => {
+      requireFile(raw, () => {
+        const url = "arquivos/" + raw;
+        const ext = extOf(url);
+
+        if (viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO — " + raw;
+        if (viewerBox) viewerBox.style.display = "block";
+        if (viewerError) viewerError.style.display = "none";
+        if (closeViewer) closeViewer.style.display = "inline-flex";
+
+        if (openNewTab) {
+          openNewTab.href = url;
+          openNewTab.style.display = "inline-flex";
+        }
+
+        if (ext === "pdf") {
+          if (imgView) { imgView.style.display = "none"; imgView.removeAttribute("src"); }
+          if (pdfFrame) {
+            pdfFrame.style.display = "block";
+            pdfFrame.src = url + "#view=FitH";
+          }
+          return;
+        }
+
+        if (["png", "jpg", "jpeg", "webp"].includes(ext)) {
+          if (pdfFrame) { pdfFrame.style.display = "none"; pdfFrame.removeAttribute("src"); }
+          if (imgView) {
+            imgView.style.display = "block";
+            imgView.src = url;
+            imgView.onerror = () => showError("Imagem não encontrada.");
+          }
+          return;
+        }
+
+        showError("Extensão não suportada.");
+      });
+    });
+  }
+
+  folderList.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-folder]");
+    if (!btn) return;
+    const folder = btn.getAttribute("data-folder");
+    if (!folder) return;
+
+    filePath.value = folder + "/";
+    resetViewer();
+
+    // já pede o sub-código ao clicar (se for preciso)
+    requireFolder(folder, () => {});
+  });
+
+  btnOpen.addEventListener("click", openFile);
+  filePath.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); openFile(); }
+  });
+
+  closeViewer?.addEventListener("click", resetViewer);
+
+  resetViewer();
 }
 
 // ========= SE EU NÃO VOLTAR =========
