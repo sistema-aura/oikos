@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OIKOS — Admin</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    #netCanvas{ pointer-events:none !important; }
+    .logo{ user-select:none; }
+  </style>
+</head>
+
+<body class="net">
+  <canvas id="netCanvas"></canvas>
+
+  <div class="hud" id="adminRoot">
+    <!-- TOP BAR -->
+    <div class="panel hud-top">
+      <div class="hud-brand">
+        <div class="logo">OIKOS</div>
+        <div class="status">Área reservada. Logs e respostas.</div>
+      </div>
+      <div class="hud-actions" style="gap:10px;">
+        <a class="btn" href="rede.html" style="text-decoration:none; display:inline-flex; align-items:center;">VOLTAR</a>
+        <button class="btn" id="btnLogout" type="button">SAIR</button>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div class="panel hud-left">
+
+      <!-- gate do admin -->
+      <button id="lockAdminPage" class="lockbox2" type="button" style="display:none;">
+        🔒 ACESSO BLOQUEADO<br/>
+        Requer ADMIN.
+      </button>
+
+      <div id="contentAdminPage" style="display:none;">
+        <div class="view" style="gap:12px;">
+          <p class="msgTitle" style="margin:0;">Conversas</p>
+          <div id="adminThreads" class="list2"></div>
+        </div>
+
+        <div class="view" style="margin-top:14px;">
+          <p class="msgTitle" id="adminTitle" style="margin:0 0 8px;">Seleciona uma conversa.</p>
+          <div id="adminLog" style="display:flex; flex-direction:column; gap:8px; margin:10px 0;"></div>
+
+          <form id="adminForm" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input id="adminName" type="text" placeholder="assinatura (ex: Gabriel)" autocomplete="off"
+              style="width:220px; padding:10px 12px; border-radius:12px;
+                    border:1px solid rgba(120,255,214,.18);
+                    background: rgba(0,0,0,.45); color: rgba(232,237,246,.92);
+                    font-family: var(--mono); outline:none;">
+
+            <input id="adminInput" type="text" placeholder="responder…" autocomplete="off"
+              style="flex:1; min-width:220px; padding:10px 12px; border-radius:12px;
+                    border:1px solid rgba(120,255,214,.18);
+                    background: rgba(0,0,0,.45); color: rgba(232,237,246,.92);
+                    font-family: var(--mono); outline:none;">
+            <button class="btn" type="submit">RESPONDER</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL (mesmo sistema) -->
+  <div class="modalBack" id="codeModal" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <p class="modalTitle" id="modalTitle">Inserir código</p>
+        <button class="modalClose" id="modalClose" type="button">FECHAR</button>
+      </div>
+
+      <form id="modalForm" class="modalRow">
+        <input id="modalCode" type="text" placeholder="padrão / data / associação" autocomplete="off" />
+        <button class="btn" type="submit">VALIDAR</button>
+      </form>
+
+      <div class="modalMsg" id="modalMsg"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/keys.js"></script>
+  <script src="assets/js/net.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <script>
+    const c = document.getElementById("netCanvas");
+    if (c) c.style.pointerEvents = "none";
+  </script>
+</body>
+</html>
