@@ -6,7 +6,7 @@
   <title>OIKOS — Rede</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 
-  <!-- FIX: o canvas não pode bloquear cliques no HUD (admin secreto) -->
+  <!-- FIX: o canvas não pode bloquear cliques (admin secreto) -->
   <style>
     #netCanvas { pointer-events: none !important; }
     .hud, .panel { position: relative; z-index: 2; }
@@ -47,7 +47,6 @@
           SE EU NÃO VOLTAR
         </a>
 
-        <!-- CANAL NÃO AUTORIZADO (fica dentro das tabs, alinhado) -->
         <a class="tab2"
            href="canal_nao_autorizado.html"
            style="
@@ -76,7 +75,6 @@
           Requer Código 01.
         </button>
 
-        <!-- Importante: começa oculto (app.js liga/desliga) -->
         <div id="contentMensagens" style="display:none; pointer-events:none; opacity:.35;">
           <div class="msgGrid">
             <div class="msgList">
@@ -87,11 +85,8 @@
 
             <div class="msgView">
               <p class="msgTitle" id="msgTitle">Selecione um contacto.</p>
-
-              <!-- histórico -->
               <div id="msgLog" style="display:flex; flex-direction:column; gap:8px; margin:10px 0;"></div>
 
-              <!-- escrever -->
               <form id="msgForm" style="display:flex; gap:10px; margin-top:auto;">
                 <input id="msgInput" type="text" placeholder="escreve…" autocomplete="off"
                   style="flex:1; min-width:0; padding:10px 12px; border-radius:12px;
@@ -157,12 +152,12 @@
     </div>
   </div>
 
-  <!-- Ordem correta: keys -> net -> app -->
+  <!-- Ordem correta -->
   <script src="assets/js/keys.js"></script>
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
 
-  <!-- força pointer-events do canvas mesmo se net.js mexer -->
+  <!-- reforço -->
   <script>
     const c = document.getElementById("netCanvas");
     if (c) c.style.pointerEvents = "none";
