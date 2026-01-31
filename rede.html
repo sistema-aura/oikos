@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OIKOS — Rede</title>
   <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    #netCanvas{ pointer-events:none !important; }
+    .logo{ cursor:pointer; user-select:none; }
+  </style>
 </head>
 
 <body class="net">
@@ -16,20 +20,10 @@
     <!-- Top bar -->
     <div class="panel hud-top">
       <div class="hud-brand">
-        <!-- LOGO = BOTÃO SECRETO ADMIN -->
-        <div
-          class="logo"
-          id="adminTrigger"
-          title="OIKOS"
-          style="cursor:pointer;"
-        >
-          OIKOS
-        </div>
-        <div class="status">
-          Comunicação direta comprometida. Usa apenas se necessário.
-        </div>
+        <!-- LOGO = ADMIN SECRETO -->
+        <div class="logo" id="adminTrigger" title="OIKOS">OIKOS</div>
+        <div class="status">Comunicação direta comprometida. Usa apenas se necessário.</div>
       </div>
-
       <div class="hud-actions">
         <button class="btn" id="btnLogout" type="button">SAIR</button>
       </div>
@@ -40,40 +34,29 @@
 
       <!-- TABS -->
       <div class="tabs2">
-        <button class="tab2 active" data-tab="mensagens" type="button">
-          MENSAGENS
-        </button>
+        <button class="tab2 active" data-tab="mensagens" type="button">MENSAGENS</button>
 
-        <a
-          class="tab2"
-          href="arquivos.html"
-          id="tabArquivo"
-          style="text-decoration:none; display:inline-flex; align-items:center;"
-        >
+        <!-- LINKS REAIS (não dependem do JS) -->
+        <a class="tab2" href="arquivos.html" id="tabArquivo"
+           style="text-decoration:none; display:inline-flex; align-items:center;">
           ARQUIVO
         </a>
 
-        <a
-          class="tab2"
-          href="nao-voltei.html"
-          id="tabNaoVoltei"
-          style="text-decoration:none; display:inline-flex; align-items:center;"
-        >
+        <a class="tab2" href="nao-voltei.html" id="tabNaoVoltei"
+           style="text-decoration:none; display:inline-flex; align-items:center;">
           SE EU NÃO VOLTAR
         </a>
 
-        <a
-          class="tab2"
-          href="canal_nao_autorizado.html"
-          style="
-            text-decoration:none;
-            display:inline-flex;
-            align-items:center;
-            gap:8px;
-            border-color: rgba(255,120,120,.35);
-            color: rgba(255,160,160,.95);
-          "
-        >
+        <a class="tab2"
+           href="canal_nao_autorizado.html"
+           style="
+             text-decoration:none;
+             display:inline-flex;
+             align-items:center;
+             gap:8px;
+             border-color: rgba(255,120,120,.35);
+             color: rgba(255,160,160,.95);
+           ">
           <span style="
             width:8px;
             height:8px;
@@ -85,17 +68,15 @@
         </a>
       </div>
 
-      <!-- MENSAGENS -->
+      <!-- Mensagens -->
       <div class="view" data-panel="mensagens">
         <button id="lockMensagens" class="lockbox2" type="button">
           🔒 ACESSO BLOQUEADO<br/>
           Requer Código 01.
         </button>
 
-        <div
-          id="contentMensagens"
-          style="display:none; pointer-events:none; opacity:.35;"
-        >
+        <!-- começa oculto (app.js liga/desliga) -->
+        <div id="contentMensagens" style="display:none; pointer-events:none; opacity:.35;">
           <div class="msgGrid">
             <div class="msgList">
               <button class="msgBtn" data-msg="gabriel" type="button">Gabriel</button>
@@ -105,26 +86,15 @@
 
             <div class="msgView">
               <p class="msgTitle" id="msgTitle">Selecione um contacto.</p>
+
               <div id="msgLog" style="display:flex; flex-direction:column; gap:8px; margin:10px 0;"></div>
 
               <form id="msgForm" style="display:flex; gap:10px; margin-top:auto;">
-                <input
-                  id="msgInput"
-                  type="text"
-                  placeholder="escreve…"
-                  autocomplete="off"
-                  style="
-                    flex:1;
-                    min-width:0;
-                    padding:10px 12px;
-                    border-radius:12px;
-                    border:1px solid rgba(120,255,214,.18);
-                    background: rgba(0,0,0,.45);
-                    color: rgba(232,237,246,.92);
-                    font-family: var(--mono);
-                    outline:none;
-                  "
-                >
+                <input id="msgInput" type="text" placeholder="escreve…" autocomplete="off"
+                  style="flex:1; min-width:0; padding:10px 12px; border-radius:12px;
+                        border:1px solid rgba(120,255,214,.18);
+                        background: rgba(0,0,0,.45); color: rgba(232,237,246,.92);
+                        font-family: var(--mono); outline:none;">
                 <button class="btn" type="submit">ENVIAR</button>
               </form>
             </div>
@@ -132,67 +102,55 @@
         </div>
       </div>
 
-    </div>
-  </div>
+      <!-- MODAL -->
+      <div class="modalBack" id="codeModal" style="display:none;">
+        <div class="modal">
+          <div class="modalHead">
+            <p class="modalTitle" id="modalTitle">Inserir código</p>
+            <button class="modalClose" id="modalClose" type="button">FECHAR</button>
+          </div>
 
-  <!-- MODAL (CÓDIGOS) -->
-  <div class="modalBack" id="codeModal" style="display:none;">
-    <div class="modal">
-      <div class="modalHead">
-        <p class="modalTitle" id="modalTitle">Inserir código</p>
-        <button class="modalClose" id="modalClose" type="button">FECHAR</button>
+          <form id="modalForm" class="modalRow">
+            <input id="modalCode" type="text" placeholder="padrão / data / associação" autocomplete="off" />
+            <button class="btn" type="submit">VALIDAR</button>
+          </form>
+
+          <div class="modalMsg" id="modalMsg"></div>
+        </div>
       </div>
 
-      <form id="modalForm" class="modalRow">
-        <input
-          id="modalCode"
-          type="text"
-          placeholder="padrão / associação"
-          autocomplete="off"
-        />
-        <button class="btn" type="submit">VALIDAR</button>
-      </form>
-
-      <div class="modalMsg" id="modalMsg"></div>
     </div>
   </div>
 
-  <!-- SCRIPTS -->
+  <!-- scripts -->
   <script src="assets/js/keys.js"></script>
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
 
-  <!-- ADMIN TRIGGER (5 cliques no OIKOS) -->
+  <!-- ADMIN: 5 cliques no OIKOS -> pede código -> vai para admin.html -->
   <script>
-    (function () {
+    (function(){
       const logo = document.getElementById("adminTrigger");
-      if (!logo) return;
+      if(!logo) return;
 
       let clicks = 0;
-      let timer = null;
+      let t = null;
 
       logo.addEventListener("click", () => {
         clicks++;
-        clearTimeout(timer);
-
-        timer = setTimeout(() => {
-          clicks = 0;
-        }, 1200);
+        clearTimeout(t);
+        t = setTimeout(() => { clicks = 0; }, 1200);
 
         if (clicks >= 5) {
           clicks = 0;
 
+          // Se o teu app.js tiver setupCodeModal global, usamos; se não, vamos direto
           if (typeof setupCodeModal === "function") {
             const { openModal } = setupCodeModal();
-            openModal(
-              "Área reservada — ADMIN",
-              "admin",
-              () => {
-                window.location.href = "admin.html";
-              }
-            );
+            openModal("Área reservada — ADMIN", "admin", () => {
+              window.location.href = "admin.html";
+            });
           } else {
-            // fallback direto
             window.location.href = "admin.html";
           }
         }
