@@ -442,9 +442,7 @@ function initArquivos() {
   }
 
   function openFile(fileKey){
-    // ✅ caminho robusto (funciona em subpastas)
     const url = "./arquivos/" + fileKey.split("/").map(encodeURIComponent).join("/");
-
     const ext = extOf(url);
 
     if(viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO — " + fileKey;
@@ -458,7 +456,6 @@ function initArquivos() {
       openNewTab.style.display = "inline-flex";
     }
 
-    // ✅ APENAS PNG
     if (ext === "png") {
       if (pdfFrame) {
         pdfFrame.style.display = "none";
@@ -489,7 +486,7 @@ function initArquivos() {
     const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
     const realFileKey = OIKOS.resolveKey(fileMap, fileKey);
 
-    if (!fileMap[realFileKey]) return cb(); // sem código próprio
+    if (!fileMap[realFileKey]) return cb();
     if (OIKOS.hasFileAccess(realFileKey)) return cb();
 
     openModal("Requer sub-código — Documento", "archiveFile", cb, { target: realFileKey });
@@ -501,8 +498,6 @@ function initArquivos() {
 
     const idx = window.OIKOS_KEYS?.ARCHIVE_INDEX || {};
     const files = Array.isArray(idx[folder]) ? idx[folder] : [];
-
-    // ✅ mostra só PNG na lista
     const pngs = files.filter(n => (n || "").toLowerCase().endsWith(".png"));
 
     if(!pngs.length){
@@ -538,7 +533,6 @@ function initArquivos() {
   closeViewer && closeViewer.addEventListener("click", resetViewer);
   resetViewer();
 
-  // Gate principal: Código 02
   if (OIKOS.mem.c02) unlockUI();
   else {
     lockUI();
@@ -546,7 +540,6 @@ function initArquivos() {
   }
   lock?.addEventListener("click", () => openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI()));
 
-  // clicar pastas
   folderList && folderList.addEventListener("click",(e)=>{
     const btn = e.target.closest("[data-folder]");
     if(!btn) return;
@@ -636,15 +629,14 @@ function initAdmin() {
     if (content) content.style.display = "block";
   }
 
-  // Gate ADMIN
   if (OIKOS.mem.admin) unlockUI();
   else {
     lockUI();
     openModal("Acesso restrito — ADMIN", "admin", () => unlockUI());
   }
+
   lock?.addEventListener("click", () => openModal("Acesso restrito — ADMIN", "admin", () => unlockUI()));
 
-  // carregar assinatura (persistente)
   if (adminName) {
     adminName.value = OIKOS.getAdminName();
     adminName.addEventListener("change", () => {
@@ -697,7 +689,6 @@ function initAdmin() {
       logBox.appendChild(line);
     });
 
-    // scroll p/ baixo
     logBox.scrollTop = logBox.scrollHeight;
   }
 
@@ -709,7 +700,10 @@ function initAdmin() {
 
   form?.addEventListener("submit", (e) => {
     e.preventDefault();
-    if (!currentThread) return;
+    if (!currentThread) {
+      if (title) title.textContent = "Seleciona uma conversa primeiro.";
+      return;
+    }
 
     const txt = (adminInput?.value || "").trim();
     if (!txt) return;
@@ -724,6 +718,11 @@ function initAdmin() {
   });
 
   renderThreads();
+
+  // abre automaticamente a primeira conversa (ajuda MUITO)
+  const t = OIKOS.getThreads();
+  const first = Object.keys(t)[0];
+  if (first) openThread(first);
 
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
