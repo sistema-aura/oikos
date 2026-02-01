@@ -30,8 +30,8 @@ const OIKOS = {
     admin: false,
 
     // sub-acessos (sessão)
-    archiveFolders: {},
-    archiveFiles: {}
+    archiveFolders: {}, // { Ice:true, ... }
+    archiveFiles: {}    // { "Ice/relatorio.pdf":true, ... }
   },
 
   norm(v) {
@@ -42,10 +42,11 @@ const OIKOS = {
       .replace(/\s+/g, " ");
   },
 
-  // 🔧 resolve "Ice" vs "ice"
+  // 🔧 resolve "Ice" vs "ice" (devolve a key real do objeto)
   resolveKey(obj, rawKey) {
     if (!obj) return rawKey;
     if (Object.prototype.hasOwnProperty.call(obj, rawKey)) return rawKey;
+
     const target = this.norm(rawKey);
     const found = Object.keys(obj).find(k => this.norm(k) === target);
     return found || rawKey;
@@ -106,19 +107,24 @@ const OIKOS = {
       admin: window.OIKOS_KEYS?.ADMIN || []
     };
 
+    // ✅ PASTA: resolve key real mesmo se vier "ice" e o keys tiver "Ice"
     if (type === "archiveFolder") {
       const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
       const realKey = this.resolveKey(folderMap, target || "");
-      return (folderMap[realKey] || []).map(v => this.norm(v)).includes(x);
+      const list = (folderMap[realKey] || []).map(v => this.norm(v));
+      return list.includes(x);
     }
 
+    // ✅ FICHEIRO: resolve key real mesmo com diferenças
     if (type === "archiveFile") {
       const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
       const realKey = this.resolveKey(fileMap, target || "");
-      return (fileMap[realKey] || []).map(v => this.norm(v)).includes(x);
+      const list = (fileMap[realKey] || []).map(v => this.norm(v));
+      return list.includes(x);
     }
 
-    return (map[type] || []).map(v => this.norm(v)).includes(x);
+    const list = (map[type] || []).map(v => this.norm(v));
+    return list.includes(x);
   },
 
   // ===== Admin name =====
@@ -172,16 +178,20 @@ function setupCodeModal() {
   modal.style.display = "none";
 
   let pendingAction = null;
-  let requiredType = null;
-  let requiredTarget = null;
+  let requiredType = null;     // c01|c02|c03|admin|archiveFolder|archiveFile|c04
+  let requiredTarget = null;   // pasta ou "Pasta/ficheiro.ext"
+  let onClose = null;
 
   function openModal(title, type, action, opts = {}) {
-    pendingAction = action;
-    requiredType = type;
+    pendingAction = typeof action === "function" ? action : null;
+    requiredType = type || null;
     requiredTarget = opts.target || null;
-    modalTitle.textContent = title || "Inserir código";
-    modalMsg.textContent = "";
+    onClose = typeof opts.onClose === "function" ? opts.onClose : null;
+
+    if (modalTitle) modalTitle.textContent = title || "Inserir código";
+    if (modalMsg) modalMsg.textContent = "";
     modalCode.value = "";
+
     modal.style.display = "flex";
     setTimeout(() => modalCode.focus(), 30);
   }
@@ -191,29 +201,51 @@ function setupCodeModal() {
     pendingAction = null;
     requiredType = null;
     requiredTarget = null;
+
+    if (modalMsg) modalMsg.textContent = "";
+    modalCode.value = "";
+
+    if (onClose) onClose();
+    onClose = null;
   }
 
   modalClose?.addEventListener("click", closeModal);
-  modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
 
-  modalForm.addEventListener("submit", e => {
+  modalForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const ok = OIKOS.checkCode(modalCode.value, requiredType, requiredTarget);
-    modalMsg.textContent = ok ? "✓ padrão reconhecido" : "× padrão não reconhecido";
+
+    if (!window.OIKOS_KEYS) {
+      if (modalMsg) modalMsg.textContent = "× keys.js não carregado";
+      return;
+    }
+
+    const val = modalCode.value || "";
+    const ok = requiredType ? OIKOS.checkCode(val, requiredType, requiredTarget) : false;
+
+    if (modalMsg) modalMsg.textContent = ok ? "✓ padrão reconhecido" : "× padrão não reconhecido";
 
     if (ok) {
-      if (["c01","c02","c03","admin"].includes(requiredType)) {
+      // principais -> guardam sessão
+      if (requiredType === "c01" || requiredType === "c02" || requiredType === "c03" || requiredType === "admin") {
         OIKOS.markUnlocked(requiredType);
       }
-      if (requiredType === "archiveFolder") {
-        OIKOS.mem.archiveFolders[requiredTarget] = true;
+
+      // subpastas / subficheiros -> sessão também
+      if (requiredType === "archiveFolder" && requiredTarget) {
+        const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
+        const real = OIKOS.resolveKey(folderMap, requiredTarget);
+        OIKOS.mem.archiveFolders[real] = true;
       }
-      if (requiredType === "archiveFile") {
-        OIKOS.mem.archiveFiles[requiredTarget] = true;
+      if (requiredType === "archiveFile" && requiredTarget) {
+        const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
+        const real = OIKOS.resolveKey(fileMap, requiredTarget);
+        OIKOS.mem.archiveFiles[real] = true;
       }
+
       setTimeout(() => {
         closeModal();
-        pendingAction && pendingAction();
+        if (pendingAction) pendingAction();
       }, 180);
     }
   });
@@ -223,11 +255,11 @@ function setupCodeModal() {
 
 // ========= RESET secreto =========
 function bindSecretReset() {
-  document.addEventListener("keydown", e => {
+  document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.shiftKey && (e.key === "R" || e.key === "r")) {
       e.preventDefault();
       localStorage.clear();
-      sessionStorage.clear();
+      try { sessionStorage.clear(); } catch {}
       location.reload();
     }
   });
@@ -238,11 +270,14 @@ function initIndex() {
   const form = $("#loginForm");
   if (!form) return;
 
-  form.addEventListener("submit", e => {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
     const pass = $("#senha")?.value || "";
     const ok = OIKOS.login(pass);
-    if (ok) setTimeout(() => location.href = "rede.html", 180);
+
+    const msg = $("#loginMsg");
+    if (msg) msg.textContent = ok ? "✓" : "×";
+    if (ok) setTimeout(() => window.location.href = "rede.html", 180);
   });
 }
 
@@ -256,9 +291,18 @@ function initRede() {
   OIKOS.loadSessionFlags();
   bindSecretReset();
 
+  const tabs = $all("[data-tab]");
+  const panels = $all("[data-panel]");
+
+  const lockMensagens = $("#lockMensagens");
+  const contentMensagens = $("#contentMensagens");
+
+  const tabArquivo = $("#tabArquivo");
+  const tabNaoVoltei = $("#tabNaoVoltei");
+
   const { openModal } = setupCodeModal();
 
-  // 🔐 ADMIN ESCONDIDO NA LOGO OIKOS
+  // ✅ BOTÃO DISFARÇADO NA LOGO → ADMIN
   const logo = document.getElementById("oikosLogo");
   if (logo) {
     logo.addEventListener("click", () => {
@@ -272,6 +316,415 @@ function initRede() {
     });
   }
 
+  function setTab(name) {
+    tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+    panels.forEach(p => p.style.display = (p.dataset.panel === name ? "flex" : "none"));
+  }
+
+  function showMensagensLocked() {
+    if (lockMensagens) lockMensagens.style.display = "block";
+    if (contentMensagens) {
+      contentMensagens.style.display = "none";
+      contentMensagens.style.pointerEvents = "none";
+      contentMensagens.style.opacity = ".35";
+    }
+  }
+
+  function showMensagensUnlocked() {
+    if (lockMensagens) lockMensagens.style.display = "none";
+    if (contentMensagens) {
+      contentMensagens.style.display = "block";
+      contentMensagens.style.pointerEvents = "auto";
+      contentMensagens.style.opacity = "1";
+    }
+  }
+
+  setTab("mensagens");
+  if (OIKOS.mem.c01) showMensagensUnlocked();
+  else showMensagensLocked();
+
+  function unlockMensagens() {
+    openModal("Requer Código 01 — Mensagens", "c01", () => {
+      showMensagensUnlocked();
+      setTab("mensagens");
+    });
+  }
+
+  tabs.forEach(t => t.addEventListener("click", () => {
+    if (t.dataset.tab === "mensagens") {
+      if (!OIKOS.mem.c01) return unlockMensagens();
+      setTab("mensagens");
+      showMensagensUnlocked();
+    }
+  }));
+
+  lockMensagens?.addEventListener("click", unlockMensagens);
+
+  tabArquivo?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (OIKOS.mem.c02) return window.location.href = "arquivos.html";
+    openModal("Requer Código 02 — Arquivo", "c02", () => window.location.href = "arquivos.html");
+  });
+
+  tabNaoVoltei?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (OIKOS.mem.c03) return window.location.href = "nao-voltei.html";
+    openModal("Requer Código 03 — Se eu não voltar", "c03", () => window.location.href = "nao-voltei.html");
+  });
+
+  $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
+}
+
+// ========= ARQUIVO (UI nova: folderList + fileList + viewer) =========
+function initArquivos() {
+  const root = $("#arquivoRoot");
+  if (!root) return;
+
+  OIKOS.requireLogin();
+  OIKOS.loadSessionFlags();
+  bindSecretReset();
+
+  const lock = $("#lockArquivoPage");
+  const content = $("#contentArquivoPage");
+
+  const folderList = $("#folderList");
+  const folderStatus = $("#folderStatus");
+
+  const fileList = $("#fileList");
+  const fileStatus = $("#fileStatus");
+
+  const viewerTitle = $("#viewerTitle");
+  const viewerHint = $("#viewerHint");
+  const viewerBox = $("#viewerBox");
+  const pdfFrame = $("#pdfFrame");
+  const imgView = $("#imgView");
+  const viewerError = $("#viewerError");
+  const openNewTab = $("#openNewTab");
+  const closeViewer = $("#closeViewer");
+
+  const { openModal } = setupCodeModal();
+
+  function lockUI() {
+    if (lock) lock.style.display = "block";
+    if (content) content.style.display = "none";
+  }
+  function unlockUI() {
+    if (lock) lock.style.display = "none";
+    if (content) content.style.display = "block";
+  }
+
+  function extOf(path){
+    const m = (path || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+    return m ? m[1] : "";
+  }
+
+  function resetViewer(){
+    if(viewerBox) viewerBox.style.display = "none";
+    if(pdfFrame){ pdfFrame.style.display = "none"; pdfFrame.removeAttribute("src"); }
+    if(imgView){ imgView.style.display = "none"; imgView.removeAttribute("src"); }
+    if(viewerError){ viewerError.style.display = "none"; viewerError.textContent = ""; }
+    if(openNewTab){ openNewTab.style.display = "none"; openNewTab.href = "#"; }
+    if(closeViewer){ closeViewer.style.display = "none"; }
+    if(viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO";
+    if(viewerHint) viewerHint.style.display = "block";
+  }
+
+  function showError(msg){
+    if(viewerBox) viewerBox.style.display = "block";
+    if(pdfFrame) pdfFrame.style.display = "none";
+    if(imgView) imgView.style.display = "none";
+    if(viewerError){
+      viewerError.style.display = "block";
+      viewerError.textContent = msg || "Não foi possível abrir.";
+    }
+    if(closeViewer) closeViewer.style.display = "inline-flex";
+    if(viewerHint) viewerHint.style.display = "none";
+  }
+
+  function openFile(fileKey){
+    // ✅ caminho robusto (funciona em subpastas)
+    const url = "./arquivos/" + fileKey.split("/").map(encodeURIComponent).join("/");
+
+    const ext = extOf(url);
+
+    if(viewerTitle) viewerTitle.textContent = "VISUALIZAÇÃO — " + fileKey;
+    if(viewerHint) viewerHint.style.display = "none";
+    if(viewerBox) viewerBox.style.display = "block";
+    if(viewerError) viewerError.style.display = "none";
+    if(closeViewer) closeViewer.style.display = "inline-flex";
+
+    if(openNewTab){
+      openNewTab.href = url;
+      openNewTab.style.display = "inline-flex";
+    }
+
+    // ✅ APENAS PNG
+    if (ext === "png") {
+      if (pdfFrame) {
+        pdfFrame.style.display = "none";
+        pdfFrame.removeAttribute("src");
+      }
+
+      if (imgView) {
+        imgView.style.display = "block";
+        imgView.src = url;
+        imgView.onerror = () => showError("Imagem não encontrada.");
+      }
+      return;
+    }
+
+    showError("Apenas ficheiros PNG são permitidos.");
+  }
+
+  function requireFolder(folder, cb){
+    const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
+    const realFolder = OIKOS.resolveKey(folderMap, folder);
+
+    if (OIKOS.hasFolderAccess(realFolder)) return cb();
+
+    openModal("Requer sub-código — " + realFolder, "archiveFolder", cb, { target: realFolder });
+  }
+
+  function requireFile(fileKey, cb){
+    const fileMap = window.OIKOS_KEYS?.ARCHIVE_FILES || {};
+    const realFileKey = OIKOS.resolveKey(fileMap, fileKey);
+
+    if (!fileMap[realFileKey]) return cb(); // sem código próprio
+    if (OIKOS.hasFileAccess(realFileKey)) return cb();
+
+    openModal("Requer sub-código — Documento", "archiveFile", cb, { target: realFileKey });
+  }
+
+  function renderFiles(folder){
+    if (!fileList) return;
+    fileList.innerHTML = "";
+
+    const idx = window.OIKOS_KEYS?.ARCHIVE_INDEX || {};
+    const files = Array.isArray(idx[folder]) ? idx[folder] : [];
+
+    // ✅ mostra só PNG na lista
+    const pngs = files.filter(n => (n || "").toLowerCase().endsWith(".png"));
+
+    if(!pngs.length){
+      if (fileStatus) fileStatus.textContent = "Sem ficheiros PNG listados para esta pasta (ARCHIVE_INDEX).";
+      return;
+    }
+
+    if (fileStatus) fileStatus.textContent = "Seleciona um ficheiro para abrir.";
+
+    pngs.forEach((name)=>{
+      const fileKey = folder + "/" + name;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "item2 fileBtn";
+
+      btn.innerHTML = `
+        <p class="h">${name}</p>
+        <div class="fileMeta">
+          <span class="pill">PNG</span>
+          <span class="pill">${folder}</span>
+        </div>
+      `;
+
+      btn.addEventListener("click", ()=>{
+        requireFile(fileKey, () => openFile(fileKey));
+      });
+
+      fileList.appendChild(btn);
+    });
+  }
+
+  closeViewer && closeViewer.addEventListener("click", resetViewer);
+  resetViewer();
+
+  // Gate principal: Código 02
+  if (OIKOS.mem.c02) unlockUI();
+  else {
+    lockUI();
+    openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI());
+  }
+  lock?.addEventListener("click", () => openModal("Requer Código 02 — Arquivo", "c02", () => unlockUI()));
+
+  // clicar pastas
+  folderList && folderList.addEventListener("click",(e)=>{
+    const btn = e.target.closest("[data-folder]");
+    if(!btn) return;
+    const folder = btn.getAttribute("data-folder");
+    if(!folder) return;
+
+    resetViewer();
+    if(folderStatus) folderStatus.textContent = "Verificando acesso — " + folder + "…";
+    if(fileStatus) fileStatus.textContent = "Aguardando…";
+    if(fileList) fileList.innerHTML = "";
+
+    requireFolder(folder, ()=>{
+      const folderMap = window.OIKOS_KEYS?.ARCHIVE_FOLDERS || {};
+      const realFolder = OIKOS.resolveKey(folderMap, folder);
+
+      if(folderStatus) folderStatus.textContent = "✓ Pasta desbloqueada: " + realFolder;
+      renderFiles(realFolder);
+    });
+  });
+
+  $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
+}
+
+// ========= SE EU NÃO VOLTAR =========
+function initNaoVoltei() {
+  const root = $("#naoVolteiRoot");
+  if (!root) return;
+
+  OIKOS.requireLogin();
+  OIKOS.loadSessionFlags();
+  bindSecretReset();
+
+  const lock = $("#lockNaoVolteiPage");
+  const content = $("#contentNaoVolteiPage");
+  const { openModal } = setupCodeModal();
+
+  function lockUI() {
+    if (lock) lock.style.display = "block";
+    if (content) content.style.display = "none";
+  }
+  function unlockUI() {
+    if (lock) lock.style.display = "none";
+    if (content) content.style.display = "block";
+  }
+
+  if (OIKOS.mem.c03) unlockUI();
+  else {
+    lockUI();
+    openModal("Requer Código 03 — Se eu não voltar", "c03", () => unlockUI());
+  }
+
+  lock?.addEventListener("click", () => openModal("Requer Código 03 — Se eu não voltar", "c03", () => unlockUI()));
+  $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
+}
+
+// ========= ADMIN (admin.html) =========
+function initAdmin() {
+  const root = $("#adminRoot");
+  if (!root) return;
+
+  OIKOS.requireLogin();
+  OIKOS.ensureThreads();
+  OIKOS.loadSessionFlags();
+  bindSecretReset();
+
+  const lock = $("#lockAdminPage");
+  const content = $("#contentAdminPage");
+
+  const threadsBox = $("#adminThreads");
+  const title = $("#adminTitle");
+  const logBox = $("#adminLog");
+
+  const form = $("#adminForm");
+  const adminName = $("#adminName");
+  const adminInput = $("#adminInput");
+
+  const { openModal } = setupCodeModal();
+
+  let currentThread = null;
+
+  function lockUI() {
+    if (lock) lock.style.display = "block";
+    if (content) content.style.display = "none";
+  }
+  function unlockUI() {
+    if (lock) lock.style.display = "none";
+    if (content) content.style.display = "block";
+  }
+
+  // Gate ADMIN
+  if (OIKOS.mem.admin) unlockUI();
+  else {
+    lockUI();
+    openModal("Acesso restrito — ADMIN", "admin", () => unlockUI());
+  }
+  lock?.addEventListener("click", () => openModal("Acesso restrito — ADMIN", "admin", () => unlockUI()));
+
+  // carregar assinatura (persistente)
+  if (adminName) {
+    adminName.value = OIKOS.getAdminName();
+    adminName.addEventListener("change", () => {
+      OIKOS.setAdminName(adminName.value);
+    });
+  }
+
+  function esc(s) {
+    return (s || "").toString()
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#39;");
+  }
+
+  function renderThreads() {
+    if (!threadsBox) return;
+    threadsBox.innerHTML = "";
+
+    const threads = OIKOS.getThreads();
+    const keys = Object.keys(threads);
+
+    if (!keys.length) {
+      threadsBox.innerHTML = `<p style="opacity:.65; margin:6px 0;">Sem conversas.</p>`;
+      return;
+    }
+
+    keys.forEach((k) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "item2";
+      btn.innerHTML = `<p class="h">${esc(k)}</p>`;
+      btn.addEventListener("click", () => openThread(k));
+      threadsBox.appendChild(btn);
+    });
+  }
+
+  function renderLog(threadKey) {
+    if (!logBox) return;
+    logBox.innerHTML = "";
+
+    const threads = OIKOS.getThreads();
+    const arr = Array.isArray(threads[threadKey]) ? threads[threadKey] : [];
+
+    arr.forEach((m) => {
+      const line = document.createElement("div");
+      line.className = "msgLine";
+      line.innerHTML = `<strong>${esc(m?.name || "")}:</strong> <span>${esc(m?.text || "")}</span>`;
+      logBox.appendChild(line);
+    });
+
+    // scroll p/ baixo
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function openThread(k) {
+    currentThread = k;
+    if (title) title.textContent = "Conversa — " + k;
+    renderLog(k);
+  }
+
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!currentThread) return;
+
+    const txt = (adminInput?.value || "").trim();
+    if (!txt) return;
+
+    const sign = (adminName?.value || "").trim() || "ADMIN";
+    OIKOS.setAdminName(sign);
+    OIKOS.pushMessage(currentThread, sign, txt);
+
+    if (adminInput) adminInput.value = "";
+    renderLog(currentThread);
+    renderThreads();
+  });
+
+  renderThreads();
+
   $("#btnLogout")?.addEventListener("click", () => OIKOS.logout());
 }
 
@@ -279,4 +732,7 @@ function initRede() {
 document.addEventListener("DOMContentLoaded", () => {
   initIndex();
   initRede();
+  initArquivos();
+  initNaoVoltei();
+  initAdmin();
 });
