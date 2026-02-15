@@ -40,7 +40,7 @@ window.OIKOS_KEYS = {
     "canal-nao-autorizado",
     "transmissao",
     "transmissão",
-    "anonima",
+    "familia",
     "duda",
     "oikos-pt"
   ],
