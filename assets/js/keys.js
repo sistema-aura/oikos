@@ -24,8 +24,8 @@ window.OIKOS_KEYS = {
 
   CODE_03: [
     "codigo03",
-    "se eu nao voltar",
-    "se eu não voltar",
+    "aura",
+    "Aura",
     "nao-voltei",
     "não-voltei",
     "presenca",
