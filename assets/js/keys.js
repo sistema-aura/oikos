@@ -45,7 +45,7 @@ window.OIKOS_KEYS = {
     "oikos-pt"
   ],
 
-  ADMIN: ["oikos-admin-913"],
+  ADMIN: ["admin_aura"],
 
   // Sub-códigos do ARQUIVO (por pasta)
   ARCHIVE_FOLDERS: {
