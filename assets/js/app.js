@@ -1,10 +1,6 @@
-// ================================
-// OIKOS — app.js (FIREBASE CHAT)
-// LOGIN / CÓDIGOS / ARQUIVO iguais
-// MENSAGENS: Firebase em tempo real
-// ================================
+// 🔥 FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
+import {
   getFirestore,
   collection,
   addDoc,
@@ -25,131 +21,135 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// ================================
+// OIKOS CORE (INALTERADO)
+// ================================
+
 const OIKOS = {
+
   S: {
     logged: "oikos_logged_session",
     c01: "oikos_c01_session",
     c02: "oikos_c02_session",
     c03: "oikos_c03_session",
-    admin: "oikos_admin_session",
-    adminName: "oikos_admin_name"
+    admin: "oikos_admin_session"
   },
 
   USER_NAME: "Duda",
-  DEFAULT_THREADS: ["gabriel", "alice", "ice"],
+  DEFAULT_THREADS: ["gabriel","alice","ice"],
 
-  mem: {
-    c01: false,
-    c02: false,
-    c03: false,
-    admin: false
+  mem:{
+    c01:false,
+    c02:false,
+    c03:false,
+    admin:false
   },
 
-  norm(v) {
-    return (v || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+  norm(v){
+    return (v||"").toString().trim().toLowerCase().replace(/\s+/g," ");
   },
 
-  sget(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
-  sset(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+  sget(k){ try{return sessionStorage.getItem(k);}catch{return null;} },
+  sset(k,v){ try{sessionStorage.setItem(k,v);}catch{} },
 
-  isLogged() { return this.sget(this.S.logged) === "1"; },
+  isLogged(){ return this.sget(this.S.logged)==="1"; },
 
-  requireLogin() {
-    if (!this.isLogged()) window.location.href = "index.html";
+  requireLogin(){
+    if(!this.isLogged()) window.location.href="index.html";
   },
 
-  login(pass) {
-    const x = this.norm(pass);
-    const list = (window.OIKOS_KEYS?.LOGIN || []).map(v => this.norm(v));
-    if (list.includes(x)) {
-      this.sset(this.S.logged, "1");
-      return true;
-    }
-    return false;
+  login(pass){
+    const x=this.norm(pass);
+    const list=(window.OIKOS_KEYS?.LOGIN||[]).map(v=>this.norm(v));
+    const ok=list.includes(x);
+    if(ok) this.sset(this.S.logged,"1");
+    return ok;
   },
 
-  logout() {
-    sessionStorage.clear();
-    window.location.href = "index.html";
+  logout(){
+    try{sessionStorage.clear();}catch{}
+    window.location.href="index.html";
   },
 
-  loadSessionFlags() {
-    this.mem.c01 = (this.sget(this.S.c01) === "1");
-    this.mem.c02 = (this.sget(this.S.c02) === "1");
-    this.mem.c03 = (this.sget(this.S.c03) === "1");
-    this.mem.admin = (this.sget(this.S.admin) === "1");
+  loadSessionFlags(){
+    this.mem.c01=(this.sget(this.S.c01)==="1");
+    this.mem.c02=(this.sget(this.S.c02)==="1");
+    this.mem.c03=(this.sget(this.S.c03)==="1");
+    this.mem.admin=(this.sget(this.S.admin)==="1");
   },
 
-  markUnlocked(type) {
-    this.mem[type] = true;
-    this.sset(this.S[type], "1");
+  markUnlocked(type){
+    if(type==="c01"){this.mem.c01=true;this.sset(this.S.c01,"1");}
+    if(type==="c02"){this.mem.c02=true;this.sset(this.S.c02,"1");}
+    if(type==="c03"){this.mem.c03=true;this.sset(this.S.c03,"1");}
+    if(type==="admin"){this.mem.admin=true;this.sset(this.S.admin,"1");}
   },
 
-  checkCode(code, type) {
-    const x = this.norm(code);
-    const map = {
-      c01: window.OIKOS_KEYS?.CODE_01 || [],
-      c02: window.OIKOS_KEYS?.CODE_02 || [],
-      c03: window.OIKOS_KEYS?.CODE_03 || [],
-      admin: window.OIKOS_KEYS?.ADMIN || []
+  checkCode(code,type){
+    const x=this.norm(code);
+    const map={
+      c01:window.OIKOS_KEYS?.CODE_01||[],
+      c02:window.OIKOS_KEYS?.CODE_02||[],
+      c03:window.OIKOS_KEYS?.CODE_03||[],
+      admin:window.OIKOS_KEYS?.ADMIN||[]
     };
-    return (map[type] || []).map(v => this.norm(v)).includes(x);
+    return (map[type]||[]).map(v=>this.norm(v)).includes(x);
   },
 
-  getAdminName() { return localStorage.getItem(this.S.adminName) || "ADMIN"; },
-  setAdminName(v) {
-    if (v) localStorage.setItem(this.S.adminName, v);
-  },
+  // 🔥 NOVA pushMessage (FIREBASE)
+  pushMessage(thread,name,text){
+    addDoc(
+      collection(db,"threads",this.norm(thread),"messages"),
+      {
+        name,
+        text,
+        at:serverTimestamp()
+      }
+    );
+  }
 
-  // 🔥 FIREBASE MESSAGE SEND
-pushMessage(thread, name, text) {
-  addDoc(
-    collection(db, "threads", this.norm(thread), "messages"),
-    {
-      name,
-      text,
-      at: serverTimestamp()
-    }
-  );
-},
+};
 
-function $(s){ return document.querySelector(s); }
-function $all(s){ return Array.from(document.querySelectorAll(s)); }
+function $(s){return document.querySelector(s);}
+function $all(s){return Array.from(document.querySelectorAll(s));}
 
 // 🔥 FIREBASE LISTENER
-function listenThread(threadKey, callback) {
-
-  if (!window.OIKOS_FIREBASE) return;
-
-  const { db, collection, onSnapshot, query, orderBy } = window.OIKOS_FIREBASE;
-
-  const q = query(
-    collection(db, "threads", threadKey, "messages"),
+function listenThread(threadKey,callback){
+  const q=query(
+    collection(db,"threads",threadKey,"messages"),
     orderBy("at")
   );
-
-  onSnapshot(q, (snap)=>{
+  onSnapshot(q,(snap)=>{
     const msgs=[];
     snap.forEach(d=>msgs.push(d.data()));
     callback(msgs);
   });
 }
 
-// ========= INDEX =========
+// ================================
+// INDEX
+// ================================
+
 function initIndex(){
   const form=$("#loginForm");
-  if(!form) return;
-
+  if(!form)return;
   form.addEventListener("submit",(e)=>{
     e.preventDefault();
-    const ok=OIKOS.login($("#senha")?.value||"");
-    if(ok) window.location.href="rede.html";
+    const pass=$("#senha")?.value||"";
+    const ok=OIKOS.login(pass);
+    $("#loginMsg").textContent=ok?"✓":"×";
+    if(ok)setTimeout(()=>window.location.href="rede.html",200);
   });
 }
 
-// ========= REDE =========
+// ================================
+// REDE (CHAT)
+// ================================
+
 function initRede(){
-  if(!$("#redeRoot")) return;
+  const root=$("#redeRoot");
+  if(!root)return;
 
   OIKOS.requireLogin();
   OIKOS.loadSessionFlags();
@@ -166,6 +166,7 @@ function initRede(){
         log.innerHTML="";
         messages.forEach(m=>{
           const div=document.createElement("div");
+          div.className="msgLine";
           div.innerHTML=`<strong>${m.name}:</strong> ${m.text}`;
           log.appendChild(div);
         });
@@ -176,62 +177,79 @@ function initRede(){
 
   $("#msgForm")?.addEventListener("submit",(e)=>{
     e.preventDefault();
-    if(!currentThread) return;
-
-    const txt=$("#msgInput")?.value.trim();
-    if(!txt) return;
-
+    if(!currentThread)return;
+    const input=$("#msgInput");
+    const txt=(input?.value||"").trim();
+    if(!txt)return;
     OIKOS.pushMessage(currentThread,OIKOS.USER_NAME,txt);
-    $("#msgInput").value="";
+    input.value="";
   });
 
   $("#btnLogout")?.addEventListener("click",()=>OIKOS.logout());
 }
 
-// ========= ADMIN =========
+// ================================
+// ADMIN
+// ================================
+
 function initAdmin(){
-  if(!$("#adminRoot")) return;
+  const root=$("#adminRoot");
+  if(!root)return;
 
   OIKOS.requireLogin();
   OIKOS.loadSessionFlags();
 
-  let currentThread=null;
+  const threadsBox=$("#adminThreads");
   const logBox=$("#adminLog");
+  const title=$("#adminTitle");
+  const form=$("#adminForm");
+  const adminName=$("#adminName");
+  const adminInput=$("#adminInput");
 
-  $all("#adminThreads button").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      currentThread=btn.textContent.trim();
-      $("#adminTitle").textContent="Conversa — "+currentThread;
+  let currentThread=null;
 
-      listenThread(currentThread,(messages)=>{
-        logBox.innerHTML="";
-        messages.forEach(m=>{
-          const div=document.createElement("div");
-          div.className="msgLine";
-          div.innerHTML=`<strong>${m.name}:</strong> ${m.text}`;
-          logBox.appendChild(div);
-        });
-        logBox.scrollTop=logBox.scrollHeight;
-      });
-    });
+  const threadNames=["gabriel","alice","ice"];
+
+  threadNames.forEach(k=>{
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="item2";
+    btn.innerHTML=`<p class="h">${k}</p>`;
+    btn.addEventListener("click",()=>openThread(k));
+    threadsBox.appendChild(btn);
   });
 
-  $("#adminForm")?.addEventListener("submit",(e)=>{
+  function openThread(k){
+    currentThread=k;
+    title.textContent="Conversa — "+k;
+    listenThread(k,(messages)=>{
+      logBox.innerHTML="";
+      messages.forEach(m=>{
+        const div=document.createElement("div");
+        div.className="msgLine";
+        div.innerHTML=`<strong>${m.name}:</strong> ${m.text}`;
+        logBox.appendChild(div);
+      });
+      logBox.scrollTop=logBox.scrollHeight;
+    });
+  }
+
+  form?.addEventListener("submit",(e)=>{
     e.preventDefault();
-    if(!currentThread) return;
-
-    const txt=$("#adminInput")?.value.trim();
-    if(!txt) return;
-
-    const name=$("#adminName")?.value.trim()||"ADMIN";
-    OIKOS.setAdminName(name);
-
-    OIKOS.pushMessage(currentThread,name,txt);
-    $("#adminInput").value="";
+    if(!currentThread)return;
+    const txt=(adminInput?.value||"").trim();
+    if(!txt)return;
+    const sign=(adminName?.value||"ADMIN").trim();
+    OIKOS.pushMessage(currentThread,sign,txt);
+    adminInput.value="";
   });
 
   $("#btnLogout")?.addEventListener("click",()=>OIKOS.logout());
 }
+
+// ================================
+// AUTO INIT
+// ================================
 
 document.addEventListener("DOMContentLoaded",()=>{
   initIndex();
