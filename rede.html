@@ -127,22 +127,7 @@
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
 
-  <!-- ADMIN: 5 cliques no OIKOS -> pede código -> vai para admin.html -->
-  <script>
-    (function(){
-      const logo = document.getElementById("adminTrigger");
-      if(!logo) return;
 
-      let clicks = 0;
-      let t = null;
-
-      logo.addEventListener("click", () => {
-        clicks++;
-        clearTimeout(t);
-        t = setTimeout(() => { clicks = 0; }, 1200);
-
-        if (clicks >= 5) {
-          clicks = 0;
 
           // Se o teu app.js tiver setupCodeModal global, usamos; se não, vamos direto
           if (typeof setupCodeModal === "function") {
