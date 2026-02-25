@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OIKOS — Admin</title>
 
-  <!-- CAMINHOS CORRETOS (SEM ../) -->
+  <!-- CAMINHO CORRETO -->
   <link rel="stylesheet" href="assets/css/style.css" />
 
   <style>
@@ -42,7 +42,6 @@
     <!-- CONTEÚDO -->
     <div class="panel hud-left">
 
-      <!-- BLOQUEIO -->
       <button id="lockAdminPage"
               class="lockbox2"
               type="button"
@@ -51,7 +50,6 @@
         Requer ADMIN.
       </button>
 
-      <!-- CONTEÚDO REAL -->
       <div id="contentAdminPage" style="display:none;">
 
         <div class="view" style="gap:12px;">
@@ -133,30 +131,6 @@
   <script src="assets/js/keys.js"></script>
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
-
-  <!-- PROTEÇÃO EXTRA (ANTI-ACESSO DIRETO) -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-
-      // Se não existir flag ADMIN, bloqueia
-      if (!localStorage.getItem("OIKOS_ADMIN_UNLOCKED")) {
-
-        const lock = document.getElementById("lockAdminPage");
-        const content = document.getElementById("contentAdminPage");
-
-        lock.style.display = "block";
-        content.style.display = "none";
-
-      } else {
-
-        const lock = document.getElementById("lockAdminPage");
-        const content = document.getElementById("contentAdminPage");
-
-        lock.style.display = "none";
-        content.style.display = "block";
-      }
-    });
-  </script>
 
 </body>
 </html>
