@@ -36,7 +36,6 @@
       <div class="tabs2">
         <button class="tab2 active" data-tab="mensagens" type="button">MENSAGENS</button>
 
-        <!-- LINKS REAIS (não dependem do JS) -->
         <a class="tab2" href="arquivos.html" id="tabArquivo"
            style="text-decoration:none; display:inline-flex; align-items:center;">
           ARQUIVO
@@ -75,7 +74,6 @@
           Requer Código 01.
         </button>
 
-        <!-- começa oculto (app.js liga/desliga) -->
         <div id="contentMensagens" style="display:none; pointer-events:none; opacity:.35;">
           <div class="msgGrid">
             <div class="msgList">
@@ -86,7 +84,6 @@
 
             <div class="msgView">
               <p class="msgTitle" id="msgTitle">Selecione um contacto.</p>
-
               <div id="msgLog" style="display:flex; flex-direction:column; gap:8px; margin:10px 0;"></div>
 
               <form id="msgForm" style="display:flex; gap:10px; margin-top:auto;">
@@ -125,6 +122,43 @@
   <!-- scripts -->
   <script src="assets/js/keys.js"></script>
   <script src="assets/js/net.js"></script>
+
+  <!-- 🔥 FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyArqJ70FWqjk4fQ_chYO8AjfBxYgOB-J3E",
+      authDomain: "oikos-chat.firebaseapp.com",
+      projectId: "oikos-chat",
+      storageBucket: "oikos-chat.firebasestorage.app",
+      messagingSenderId: "61612665792",
+      appId: "1:61612665792:web:99cbbd6f4fb0f8c381b625"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.OIKOS_FIREBASE = {
+      db,
+      collection,
+      addDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp
+    };
+  </script>
+
   <script src="assets/js/app.js"></script>
 
 </body>
