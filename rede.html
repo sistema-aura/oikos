@@ -127,17 +127,6 @@
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
 
-
-
-          // Se o teu app.js tiver setupCodeModal global, usamos; se não, vamos direto
-          if (typeof setupCodeModal === "function") {
-            const { openModal } = setupCodeModal();
-            openModal("Área reservada — ADMIN", "admin", () => {
-              window.location.href = "admin.html";
-            });
-          } else {
-            window.location.href = "admin.html";
-          }
         }
       });
     })();
