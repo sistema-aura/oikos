@@ -3,7 +3,28 @@
 // LOGIN / CÓDIGOS / ARQUIVO iguais
 // MENSAGENS: Firebase em tempo real
 // ================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+const firebaseConfig = {
+  apiKey: "AIzaSyArqJ70FWqjk4fQ_chYO8AjfBxYgOB-J3E",
+  authDomain: "oikos-chat.firebaseapp.com",
+  projectId: "oikos-chat",
+  storageBucket: "oikos-chat.firebasestorage.app",
+  messagingSenderId: "61612665792",
+  appId: "1:61612665792:web:99cbbd6f4fb0f8c381b625"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const OIKOS = {
   S: {
     logged: "oikos_logged_session",
@@ -81,22 +102,16 @@ const OIKOS = {
   },
 
   // 🔥 FIREBASE MESSAGE SEND
-  pushMessage(thread, name, text) {
-
-    if (!window.OIKOS_FIREBASE) return;
-
-    const { db, collection, addDoc, serverTimestamp } = window.OIKOS_FIREBASE;
-
-    addDoc(
-      collection(db, "threads", this.norm(thread), "messages"),
-      {
-        name,
-        text,
-        at: serverTimestamp()
-      }
-    );
-  }
-};
+pushMessage(thread, name, text) {
+  addDoc(
+    collection(db, "threads", this.norm(thread), "messages"),
+    {
+      name,
+      text,
+      at: serverTimestamp()
+    }
+  );
+},
 
 function $(s){ return document.querySelector(s); }
 function $all(s){ return Array.from(document.querySelectorAll(s)); }
