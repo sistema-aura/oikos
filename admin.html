@@ -132,5 +132,43 @@
   <script src="assets/js/net.js"></script>
   <script src="assets/js/app.js"></script>
 
+  <!-- 🔥 FIREBASE (ADICIONADO) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyArqJ70FWqjk4fQ_chYO8AjfBxYgOB-J3E",
+      authDomain: "oikos-chat.firebaseapp.com",
+      projectId: "oikos-chat",
+      storageBucket: "oikos-chat.firebasestorage.app",
+      messagingSenderId: "61612665792",
+      appId: "1:61612665792:web:99cbbd6f4fb0f8c381b625"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Torna global para o app.js usar
+    window.OIKOS_FIREBASE = {
+      db,
+      collection,
+      addDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp
+    };
+  </script>
+
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
